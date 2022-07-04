@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
+</head>
+<body>
+<div id="percentage_bar">
+    <div class="loader-bg">
+        <p id="percentage_text"></p>
+    </div>
+    <div class="spiner-holder-one animate-0-25-a">
+        <div id="animate-0-25-b" class="spiner-holder-two animate-0-25-b">
+            <div class="loader-spiner" style=""></div>
+        </div>
+    </div>
+    <div class="spiner-holder-one animate-25-50-a">
+        <div id="animate-25-50-b" class="spiner-holder-two animate-25-50-b">
+            <div class="loader-spiner"></div>
+        </div>
+    </div>
+    <div class="spiner-holder-one animate-50-75-a">
+        <div id="animate-50-75-b" class="spiner-holder-two animate-50-75-b">
+            <div class="loader-spiner"></div>
+        </div>
+    </div>
+    <div class="spiner-holder-one animate-75-100-a">
+        <div id="animate-75-100-b" class="spiner-holder-two animate-75-100-b">
+            <div class="loader-spiner"></div>
+        </div>
+    </div>
+</div>
+<script src="{{url_for('static', filename='js/progress_bar.js')}}"></script>
+<script>
+    renderProgress(33);
+</script>
+</body>
+</html>
