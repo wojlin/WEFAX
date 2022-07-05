@@ -1,3 +1,5 @@
+import time
+
 from scipy.io import wavfile
 import scipy.signal
 from scipy import signal
@@ -22,7 +24,7 @@ class Demodulator:
                  tcp_port: int = 2138):
 
         self.filepath = filepath
-        self.filename = self.filepath.split('/')[-1].split('.')[0]
+        self.filename = self.filepath.split('/')[-1]
         self.lines_per_minute = lines_per_minute
         self.time_for_one_frame = 1 / (self.lines_per_minute / 60)  # in s
         self.quiet = quiet
@@ -30,12 +32,14 @@ class Demodulator:
         self.tcp_host = tcp_host
         self.tcp_port = tcp_port
 
-        """if self.tcp_stream:
+        if self.tcp_stream:
             self.stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.stream.bind((tcp_host, tcp_port))
             self.stream.listen()
-            thread = threading.Thread(target=self.manage_tcp)
-            thread.start()"""
+            self.conn, self.addr = None, None
+            threading.Thread(target=self.__tcp_client).start()
+
+    def process(self):
 
         if self.quiet:
             sys.stdout = open(os.devnull, 'w')
@@ -63,8 +67,10 @@ class Demodulator:
         if self.quiet:
             sys.stdout = sys.__stdout__
 
-    def manage_tcp(self):
+    def __tcp_client(self):
+        print('waiting for tcp client')
         self.conn, self.addr = self.stream.accept()
+        print('tcp client connected')
 
     def animated_spectrum(self):
 
@@ -122,7 +128,7 @@ class Demodulator:
 
         plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f s'))
         data_crop = self.digitalized_data[time_start * self.sample_rate:int(time_end * self.sample_rate)]
-        data_am_crop = self.__demodulate(data_crop, quiet=True)
+        data_am_crop = self.__demodulate(data_crop)
         plt.ylim(ymin=0, ymax=255)
         plt.xlim(xmin=0, xmax=length * self.sample_rate)
         plt.plot(data_am_crop)
@@ -137,22 +143,33 @@ class Demodulator:
         plt.savefig(self.filename + "_signal", dpi=600)
         plt.show()
 
-    @staticmethod
-    def __demodulate(data: list, quiet: bool = False):
-        if not quiet:
-            print("DEMODULATING SIGNAL:")
-            plot_bar(0, 1, 50, False)
+    def __demodulate(self, data: list):
+        print("DEMODULATING SIGNAL:")
+        plot_bar(0, 1, 50, False)
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "demodulating signal",
+                       "percentage": 0}
+            self.__send_tcp_packet(message)
         hilbert_signal = scipy.signal.hilbert(data)
         filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
-        if not quiet:
-            plot_bar(1, 1, 50, False)
-            print()
+        plot_bar(1, 1, 50, False)
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "demodulating signal",
+                       "percentage": 100}
+            self.__send_tcp_packet(message)
+        print()
         return filtered_signal
 
-    @staticmethod
-    def __digitalize(data):
+    def __digitalize(self, data):
         print("DIGITALIZING SIGNAL:")
         plot_bar(0, 1, 50, False)
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "digitalizing signal",
+                       "percentage": 0}
+            self.__send_tcp_packet(message)
         plow = 0.5
         phigh = 99.5
         (low, high) = np.percentile(data, (plow, phigh))
@@ -162,10 +179,14 @@ class Demodulator:
         digitalized[digitalized > 255] = 255
         plot_bar(1, 1, 50, False)
         print()
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "digitalizing signal",
+                       "percentage": 100}
+            self.__send_tcp_packet(message)
         return [int(point) for point in digitalized]
 
-    @staticmethod
-    def __find_sync_pulse(data, sample_rate, frame_len):
+    def __find_sync_pulse(self, data, sample_rate, frame_len):
         print("FINDING SYNC PULSE:")
 
         def pattern_search():
@@ -189,6 +210,11 @@ class Demodulator:
                     # if previous peak is too far, keep it and add this value to the list as a new peak
                     peaks.append((i, corr))
                     plot_bar(i, len(data), 50, True, "samples")
+                    if self.tcp_stream:
+                        message = {"data_type": "progress_bar",
+                                   "progress_title": "finding sync pulse",
+                                   "percentage": (i/len(data))*100}
+                        self.__send_tcp_packet(message)
                 elif corr > peaks[-1][1]:
                     # else if this value is bigger than the previous maximum, set this one
                     peaks[-1] = (i, corr)
@@ -196,6 +222,11 @@ class Demodulator:
                 if len(peaks) == 100:
                     plot_bar(len(data), len(data), 50, True, "samples")
                     print()
+                    if self.tcp_stream:
+                        message = {"data_type": "progress_bar",
+                                   "progress_title": "finding sync pulse",
+                                   "percentage": 100}
+                        self.__send_tcp_packet(message)
                     break
 
             return [peak[0] for peak in peaks]
@@ -233,8 +264,7 @@ class Demodulator:
         peak_groups = find_peak_groups()
         return max(peak_groups, key=len)
 
-    @staticmethod
-    def __convert_to_image(data, time_for_one_frame, sample_rate):
+    def __convert_to_image(self, data, time_for_one_frame, sample_rate):
         print("CONVERTING SIGNAL TO IMAGE:")
         frame_width = int(time_for_one_frame * sample_rate)
         w, h = frame_width, len(data) // frame_width
@@ -247,10 +277,20 @@ class Demodulator:
             if px >= w:
                 if (py % 50) == 0:
                     plot_bar(py + 1, h, 50, True, "lines")
+                    if self.tcp_stream:
+                        message = {"data_type": "progress_bar",
+                                   "progress_title": "converting signal to image",
+                                   "percentage": (py + 1)/h*100}
+                        self.__send_tcp_packet(message)
                 px = 0
                 py += 1
                 if py >= h:
                     plot_bar(h, h, 50, True, "lines")
+                    if self.tcp_stream:
+                        message = {"data_type": "progress_bar",
+                                   "progress_title": "converting signal to image",
+                                   "percentage": 100}
+                        self.__send_tcp_packet(message)
                     break
 
         image = image.resize((w, 4 * h))
@@ -270,6 +310,12 @@ class Demodulator:
 
         return image
 
+    def file_info(self):
+        sample_rate, data = wavfile.read(self.filepath)
+        channels = len(data.shape)
+        length = len(data) / sample_rate
+        return {"filename": self.filename, "channels": channels, "sample_rate": sample_rate, "length": length}
+
     def __read_file(self):
         sample_rate, data = wavfile.read(self.filepath)
 
@@ -288,11 +334,11 @@ class Demodulator:
         for p in range(parts):
             if p % 1000 == 0 or p == parts - 1:
                 plot_bar(p + 1, parts, 50, True, "samples")
-                """if self.tcp_stream:
+                if self.tcp_stream:
                     message = {"data_type": "progress_bar",
                                "progress_title": "merging channels",
                                "percentage": (p+1)/parts*100}
-                    self.__send_tcp_packet(message)"""
+                    self.__send_tcp_packet(message)
 
             one_channel_audio.append(np.divide(np.add(audio_channels[p][0], audio_channels[p][1]), 2))
         return one_channel_audio
@@ -301,8 +347,18 @@ class Demodulator:
         self.__warning("WARNING: audio sample rate is not 11025 samples per second. Program will try to resample audio")
         print(f"RESAMPLING AUDIO FROM {round(sample_rate / 1000, 2)} KhZ TO 11.025 KHZ:")
         plot_bar(0, 1, 50, False)
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "resampling audio",
+                       "percentage": 0}
+            self.__send_tcp_packet(message)
         data = scipy.signal.resample(audio_data, int(11025 * length))
         plot_bar(1, 1, 50, False)
+        if self.tcp_stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "resampling audio",
+                       "percentage": 100}
+            self.__send_tcp_packet(message)
         print()
         sample_rate = 11025
         length = len(data) / sample_rate
@@ -333,7 +389,11 @@ if __name__ == "__main__":
                               lines_per_minute=120,
                               tcp_stream=True,
                               tcp_host='localhost',
-                              tcp_port=2138)
-    # demodulator.show_output_image()
+                              tcp_port=2000)
+    print(demodulator.file_info())
+    input()
+    demodulator.process()
+    #demodulator.animated_spectrum()
+    #demodulator.show_output_image()
+    #demodulator.signal_chart(0, 25.5)
     demodulator.save_output_image("input.png")
-    # demodulator.signal_chart(0, 25.5)
