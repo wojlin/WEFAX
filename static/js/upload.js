@@ -18,7 +18,7 @@ function upload(file)
     for (const value of data.values()) {
   console.log(value);
 }
-    var req = fetch('/decode', {
+    var req = fetch('/load_file', {
       method: 'POST',
       body: data
     });
@@ -28,6 +28,8 @@ function upload(file)
       response.text().then(function (text) {
           console.log(text);
             var json = JSON.parse(text);
+            document.getElementById('file_info_datestamp').innerHTML = json['datestamp'];
+             document.getElementById('file_info_port').innerHTML = json['tcp_port'];
             document.getElementById('file_info_filename').innerHTML = json['filename'];
             document.getElementById('file_info_channels').innerHTML = json['channels'];
             document.getElementById('file_info_length').innerHTML = parseFloat(json['length']).toFixed(2) + ' s';
@@ -35,6 +37,31 @@ function upload(file)
             upload_panel.classList.add("slide_out");
             file_info.style.display = 'block';
             file_info.classList.add("slide_in");
+
+
+            let socket = new WebSocket("wss://localhost:"+json['tcp_port']);
+
+            socket.onopen = function(e) {
+              console.log("[open] Connection established");
+            };
+
+            socket.onmessage = function(event) {
+              console.log("[message] Data received from server:" + event.data);
+            };
+
+            socket.onclose = function(event) {
+              if (event.wasClean) {
+                console.log("[close] Connection closed cleanly, code=" + event.code + " reason=" + event.reason);
+              } else {
+                // e.g. server process killed or network down
+                // event.code is usually 1006 in this case
+                console.log('[close] Connection died');
+              }
+            };
+
+            socket.onerror = function(error) {
+              console.log("[error]" +error.message);
+            };
 
         });
 

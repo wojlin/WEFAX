@@ -19,9 +19,7 @@ class Demodulator:
     def __init__(self, filepath: str,
                  lines_per_minute: int = 120,
                  quiet: bool = False,
-                 tcp_stream: bool = True,
-                 tcp_host: str = "localhost",
-                 tcp_port: int = 2138):
+                 tcp_stream: bool = True):
 
         self.filepath = filepath
         self.filename = self.filepath.split('/')[-1]
@@ -29,12 +27,11 @@ class Demodulator:
         self.time_for_one_frame = 1 / (self.lines_per_minute / 60)  # in s
         self.quiet = quiet
         self.tcp_stream = tcp_stream
-        self.tcp_host = tcp_host
-        self.tcp_port = tcp_port
 
         if self.tcp_stream:
             self.stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.stream.bind((tcp_host, tcp_port))
+            self.stream.bind(('', 0))
+            self.tcp_port = self.stream.getsockname()[1]
             self.stream.listen()
             self.conn, self.addr = None, None
             threading.Thread(target=self.__tcp_client).start()
@@ -66,6 +63,12 @@ class Demodulator:
 
         if self.quiet:
             sys.stdout = sys.__stdout__
+
+    def get_tcp_port(self):
+        if self.stream:
+            return self.tcp_port
+        else:
+            return 'tcp disabled'
 
     def __tcp_client(self):
         print('waiting for tcp client')
@@ -387,10 +390,9 @@ class Demodulator:
 if __name__ == "__main__":
     demodulator = Demodulator('input/input_lq.wav',
                               lines_per_minute=120,
-                              tcp_stream=True,
-                              tcp_host='localhost',
-                              tcp_port=2000)
+                              tcp_stream=True)
     print(demodulator.file_info())
+    print(demodulator.get_tcp_port())
     input()
     demodulator.process()
     #demodulator.animated_spectrum()

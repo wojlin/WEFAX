@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>WEFAX</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
 </head>
 <body>
@@ -71,6 +71,8 @@
 </script>
 
 <div style="display:none;" id="file_info" class="box">
+    <p style="visibility: hidden" id="file_info_datestamp">none</p>
+    <p style="visibility: hidden" id="file_info_port">none</p>
     <table id="file_info_table">
         <tr>
             <th>filename</th>
@@ -94,8 +96,8 @@
         </tr>
     </table>
     <div id="convert_options">
-        <button id="button_convert">convert file</button>
-        <button id="button_other">upload other</button>
+        <button onclick="convert_file();" id="button_convert">convert file</button>
+        <button onclick="location.reload()" id="button_other">upload other</button>
     </div>
 </div>
 
@@ -140,5 +142,6 @@
     <button type="button" onclick='this.parentElement.style.display = "none";location.reload();'>close</button>
 </div>
 <script src="static/js/upload.js"></script>
+<script src="static/js/convert_file.js"></script>
 </body>
 </html>
