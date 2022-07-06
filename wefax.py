@@ -14,6 +14,8 @@ import sys
 import os
 import threading
 import socket
+import asyncio
+import websockets
 
 class Demodulator:
     def __init__(self, filepath: str,
@@ -26,15 +28,9 @@ class Demodulator:
         self.lines_per_minute = lines_per_minute
         self.time_for_one_frame = 1 / (self.lines_per_minute / 60)  # in s
         self.quiet = quiet
-        self.tcp_stream = tcp_stream
+        self.stream = tcp_stream
 
-        if self.tcp_stream:
-            self.stream = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.stream.bind(('', 0))
-            self.tcp_port = self.stream.getsockname()[1]
-            self.stream.listen()
-            self.conn, self.addr = None, None
-            threading.Thread(target=self.__tcp_client).start()
+        self.websocket_stack = []
 
     def process(self):
 
@@ -63,17 +59,6 @@ class Demodulator:
 
         if self.quiet:
             sys.stdout = sys.__stdout__
-
-    def get_tcp_port(self):
-        if self.stream:
-            return self.tcp_port
-        else:
-            return 'tcp disabled'
-
-    def __tcp_client(self):
-        print('waiting for tcp client')
-        self.conn, self.addr = self.stream.accept()
-        print('tcp client connected')
 
     def animated_spectrum(self):
 
@@ -149,30 +134,30 @@ class Demodulator:
     def __demodulate(self, data: list):
         print("DEMODULATING SIGNAL:")
         plot_bar(0, 1, 50, False)
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "demodulating signal",
                        "percentage": 0}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         hilbert_signal = scipy.signal.hilbert(data)
         filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
         plot_bar(1, 1, 50, False)
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "demodulating signal",
                        "percentage": 100}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         print()
         return filtered_signal
 
     def __digitalize(self, data):
         print("DIGITALIZING SIGNAL:")
         plot_bar(0, 1, 50, False)
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "digitalizing signal",
                        "percentage": 0}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         plow = 0.5
         phigh = 99.5
         (low, high) = np.percentile(data, (plow, phigh))
@@ -182,11 +167,11 @@ class Demodulator:
         digitalized[digitalized > 255] = 255
         plot_bar(1, 1, 50, False)
         print()
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "digitalizing signal",
                        "percentage": 100}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         return [int(point) for point in digitalized]
 
     def __find_sync_pulse(self, data, sample_rate, frame_len):
@@ -213,11 +198,11 @@ class Demodulator:
                     # if previous peak is too far, keep it and add this value to the list as a new peak
                     peaks.append((i, corr))
                     plot_bar(i, len(data), 50, True, "samples")
-                    if self.tcp_stream:
+                    if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "finding sync pulse",
                                    "percentage": (i/len(data))*100}
-                        self.__send_tcp_packet(message)
+                        self.__send_websocket_packet(message)
                 elif corr > peaks[-1][1]:
                     # else if this value is bigger than the previous maximum, set this one
                     peaks[-1] = (i, corr)
@@ -225,11 +210,11 @@ class Demodulator:
                 if len(peaks) == 100:
                     plot_bar(len(data), len(data), 50, True, "samples")
                     print()
-                    if self.tcp_stream:
+                    if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "finding sync pulse",
                                    "percentage": 100}
-                        self.__send_tcp_packet(message)
+                        self.__send_websocket_packet(message)
                     break
 
             return [peak[0] for peak in peaks]
@@ -280,20 +265,20 @@ class Demodulator:
             if px >= w:
                 if (py % 50) == 0:
                     plot_bar(py + 1, h, 50, True, "lines")
-                    if self.tcp_stream:
+                    if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "converting signal to image",
                                    "percentage": (py + 1)/h*100}
-                        self.__send_tcp_packet(message)
+                        self.__send_websocket_packet(message)
                 px = 0
                 py += 1
                 if py >= h:
                     plot_bar(h, h, 50, True, "lines")
-                    if self.tcp_stream:
+                    if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "converting signal to image",
                                    "percentage": 100}
-                        self.__send_tcp_packet(message)
+                        self.__send_websocket_packet(message)
                     break
 
         image = image.resize((w, 4 * h))
@@ -337,11 +322,11 @@ class Demodulator:
         for p in range(parts):
             if p % 1000 == 0 or p == parts - 1:
                 plot_bar(p + 1, parts, 50, True, "samples")
-                if self.tcp_stream:
+                if self.stream:
                     message = {"data_type": "progress_bar",
                                "progress_title": "merging channels",
                                "percentage": (p+1)/parts*100}
-                    self.__send_tcp_packet(message)
+                    self.__send_websocket_packet(message)
 
             one_channel_audio.append(np.divide(np.add(audio_channels[p][0], audio_channels[p][1]), 2))
         return one_channel_audio
@@ -350,30 +335,25 @@ class Demodulator:
         self.__warning("WARNING: audio sample rate is not 11025 samples per second. Program will try to resample audio")
         print(f"RESAMPLING AUDIO FROM {round(sample_rate / 1000, 2)} KhZ TO 11.025 KHZ:")
         plot_bar(0, 1, 50, False)
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "resampling audio",
                        "percentage": 0}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         data = scipy.signal.resample(audio_data, int(11025 * length))
         plot_bar(1, 1, 50, False)
-        if self.tcp_stream:
+        if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "resampling audio",
                        "percentage": 100}
-            self.__send_tcp_packet(message)
+            self.__send_websocket_packet(message)
         print()
         sample_rate = 11025
         length = len(data) / sample_rate
         return data, sample_rate, length
 
-    def __send_tcp_packet(self, message: dict):
-        packet = str(message).encode('utf-8')
-        packet_length = len(packet)
-        send_length = str(packet_length).encode('utf-8')
-        send_length += b' ' * (256 - len(send_length))
-        self.conn.send(send_length)
-        self.conn.send(packet)
+    def __send_websocket_packet(self, message: dict):
+        self.websocket_stack.append(message)
 
     @staticmethod
     def __warning(text):
@@ -392,7 +372,6 @@ if __name__ == "__main__":
                               lines_per_minute=120,
                               tcp_stream=True)
     print(demodulator.file_info())
-    print(demodulator.get_tcp_port())
     input()
     demodulator.process()
     #demodulator.animated_spectrum()

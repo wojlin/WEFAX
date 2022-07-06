@@ -10,6 +10,24 @@ function convert_file()
 
      data.append('datestamp', document.getElementById("file_info_datestamp").innerHTML);
 
+
+     var socket = io();
+
+     socket.addEventListener('message', function (event) {
+                console.log('Message from server ', event.data);
+            });
+            socket.on('connect', function() {
+                socket.emit('get_progress', {data: document.getElementById("file_info_datestamp").innerHTML});
+            });
+
+            socket.on('upload_progress', function(data) {
+                console.log(data)
+            });
+
+
+
+
+
     for (const value of data.values()) {
       console.log(value);
     }
@@ -21,7 +39,7 @@ function convert_file()
     req.then(function(response) {
       console.log('success');
       response.text().then(function (text) {
-          console.log(text);
+          //console.log(text);
 
         });
 

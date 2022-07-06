@@ -8,12 +8,26 @@ from werkzeug.utils import secure_filename
 from werkzeug.datastructures import FileStorage
 import shutil
 import time
-
+from flask_socketio import SocketIO
 from wefax import Demodulator
+from flask_socketio import send, emit
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 demodulators = {}
+
+
+@socketio.on('get_progress')
+def handle_my_custom_event(json):
+    print('received json: ' + str(json))
+    demodulator = demodulators[json['data']]
+    print(demodulator.file_info())
+    while True:
+        if len(demodulator.websocket_stack) > 0:
+            emit('upload_progress', demodulator.websocket_stack[0])
+            demodulator.websocket_stack.pop(0)
 
 
 @app.route('/favicon.ico')
@@ -29,25 +43,22 @@ def index():
 
 @app.route('/convert_file', methods=['POST'])
 def convert_file():
-
     r = request.form
     datestamp = r['datestamp']
     demodulator = demodulators[datestamp]
 
     print('############')
     print('converting')
-    print(demodulator.get_tcp_port())
     print(demodulator.file_info())
     print('############')
     demodulator.process()
     output_filepath = f'temp/{datestamp}/output.png'
-    demodulator.save_output_image()
+    demodulator.save_output_image(output_filepath)
     return send_from_directory('', output_filepath)
 
 
 @app.route('/load_file', methods=['POST'])
 def load_file():
-
     r = request.form
     dir_name = str(round(time.time() * 1000))
     save_directory = f"temp/{dir_name}"
@@ -60,15 +71,13 @@ def load_file():
 
     ret = demodulator.file_info()
     ret['datestamp'] = dir_name
-    ret['tcp_port'] = demodulator.get_tcp_port()
     demodulators[dir_name] = demodulator
 
     print('############')
     print(f"filename: {secure_filename(request.files['file'].filename)}")
-    print(f'tcp port: {ret["tcp_port"]}')
     print('############')
     return ret
 
 
 if __name__ == "__main__":
-    app.run(host="localhost", port=2137, debug=True)
+    socketio.run(app, host="localhost", port=2137, debug=True)
