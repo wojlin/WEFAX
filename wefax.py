@@ -389,4 +389,4 @@ if __name__ == "__main__":
     #demodulator.animated_spectrum()
     #demodulator.show_output_image()
     #demodulator.signal_chart(0, 25.5)
-    demodulator.save_output_image("input.png")
+    #demodulator.save_output_image("input.png")
