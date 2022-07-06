@@ -1,10 +1,66 @@
-body
-{
-background:black;
-color:white;
+body {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+  background:#121212;
+  font-family: Roboto;
+  color:white;
 overflow:hidden;
 }
+body:before, body:after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  min-width: 300vw;
+  min-height: 300vw;
+  background:black;
+  -webkit-animation-name: rotate;
+          animation-name: rotate;
+  -webkit-animation-iteration-count: infinite;
+          animation-iteration-count: infinite;
+  -webkit-animation-timing-function: linear;
+          animation-timing-function: linear;
+}
+body:before {
+  bottom: 15vh;
+  border-radius: 45%;
+  -webkit-animation-duration: 10s;
+          animation-duration: 10s;
+}
+body:after {
+  bottom: 12vh;
+  opacity: 0.5;
+  border-radius: 47%;
+  -webkit-animation-duration: 10s;
+          animation-duration: 10s;
+}
 
+@-webkit-keyframes rotate {
+  0% {
+    transform: translate(-50%, 0) rotateZ(0deg);
+  }
+  50% {
+    transform: translate(-50%, -2%) rotateZ(180deg);
+  }
+  100% {
+    transform: translate(-50%, 0%) rotateZ(360deg);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: translate(-50%, 0) rotateZ(0deg);
+  }
+  50% {
+    transform: translate(-50%, -2%) rotateZ(180deg);
+  }
+  100% {
+    transform: translate(-50%, 0%) rotateZ(360deg);
+  }
+}
 
 @keyframes slide_in
 {
@@ -52,8 +108,8 @@ overflow:hidden;
     background: rgba(54, 54, 54, 0.5);
     border-radius: 16px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(9.4px);
-    -webkit-backdrop-filter: blur(9.4px);
+    backdrop-filter: blur(2.4px);
+    -webkit-backdrop-filter: blur(2.4px);
     border: 1px solid rgba(54, 54, 54, 0.41);
 
     width: 60vh;
@@ -62,6 +118,7 @@ overflow:hidden;
 
     animation: slide_in 1s;
     animation-fill-mode:forwards;
+    z-index:100;
 
 }
 
@@ -422,3 +479,13 @@ overflow:hidden;
     left:50%;
     transform:translate(-50%,-50%);
 }
+
+
+
+
+
+
+
+
+
+
