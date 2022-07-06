@@ -43,6 +43,7 @@ class Demodulator:
 
         self.audio_data, self.sample_rate, self.length = self.__read_file()
 
+        time.sleep(1)
         if self.sample_rate != 11025:
             self.audio_data, self.sample_rate, self.length = self.__resample(self.audio_data, self.sample_rate,
                                                                              self.length)
@@ -50,7 +51,7 @@ class Demodulator:
         self.demodulated_data = self.__demodulate(self.audio_data)
         time.sleep(1)
         self.digitalized_data = self.__digitalize(self.demodulated_data)
-        time.sleep(1)
+        time.sleep(2)
         self.phasing_signals = self.__find_sync_pulse(self.digitalized_data, self.sample_rate, self.time_for_one_frame)
         self.start_frame = self.phasing_signals[-1]
 
@@ -160,6 +161,7 @@ class Demodulator:
                        "progress_title": "digitalizing signal",
                        "percentage": 0}
             self.__send_websocket_packet(message)
+        time.sleep(1)
         plow = 0.5
         phigh = 99.5
         (low, high) = np.percentile(data, (plow, phigh))
@@ -168,12 +170,20 @@ class Demodulator:
         digitalized[digitalized < 0] = 0
         digitalized[digitalized > 255] = 255
         plot_bar(1, 1, 50, False)
+        time.sleep(1)
         print()
+        if self.stream:
+            message = {"data_type": "progress_bar",
+                       "progress_title": "digitalizing signal",
+                       "percentage": 99}
+            self.__send_websocket_packet(message)
+
         if self.stream:
             message = {"data_type": "progress_bar",
                        "progress_title": "digitalizing signal",
                        "percentage": 100}
             self.__send_websocket_packet(message)
+
         return [int(point) for point in digitalized]
 
     def __find_sync_pulse(self, data, sample_rate, frame_len):

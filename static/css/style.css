@@ -340,6 +340,15 @@ overflow:hidden;
     transform:translate(-50%,-50%);
 }
 
+.download_options
+{
+     margin:auto;
+    position:absolute;
+    bottom: -10%;
+    left:50%;
+    transform:translate(-50%,-50%);
+}
+
 .button_convert, .button_other
 {
   align-items: center;
@@ -363,7 +372,7 @@ overflow:hidden;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
-  display:block;
+  display:flex;
   margin-top:2vh;
 }
 
@@ -409,7 +418,7 @@ overflow:hidden;
     border: black solid 1px;
     width:80%;
     position:absolute;
-    top: 10%;
+    top: 40%;
     left:50%;
     transform:translate(-50%,-50%);
 }

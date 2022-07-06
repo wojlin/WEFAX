@@ -4,6 +4,10 @@ function convert_file()
      const content = document.getElementById("content");
      const content_actual = document.getElementById("content-actual");
      const content_title = document.getElementById("content-title");
+     const output = document.getElementById("output");
+     const output_image = document.getElementById("output_image");
+     const output_download = document.getElementById("button_download");
+     const output_image_href = document.getElementById("output_image_href");
      file_info.classList.add("slide_out");
      content.style.display = 'block';
 
@@ -77,8 +81,16 @@ function convert_file()
     req.then(function(response) {
       console.log('success');
       response.text().then(function (text) {
-          //console.log(text);
-
+          console.log(text);
+          var json = JSON.parse(text);
+          output.style.display = 'block';
+          content.classList.remove("slide_in");
+          content.classList.add("slide_out");
+          output.classList.add("slide_in");
+          output_download.download = json['output_name'];
+          output_download.href = json['output_src'];
+          output_image.src = json['output_src'];
+          output_image_href.href = json['output_src'];
         });
 
     }, function(error) {

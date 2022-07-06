@@ -135,12 +135,14 @@
 
 </div>
 
-<div style="display:block;" id="output" class="box">
-<img id="output_image" src="" alt=""/>
-<div class="convert_options">
-    <a onclick="convert_file();" class="button_convert" href="" download="d">download file</a>
-    <button onclick="location.reload()" class="button_other">convert other</button>
-</div>
+<div style="display:none;" id="output" class="box">
+    <a id="output_image_href" href="" target="_blank">
+        <img id="output_image" src="" alt="output"/>
+    </a>
+    <div class="download_options">
+        <a class="button_convert" id="button_download" href="" download="">download file</a>
+        <button onclick="location.reload()" class="button_other">convert other</button>
+    </div>
 </div>
 
 <div id="alert">

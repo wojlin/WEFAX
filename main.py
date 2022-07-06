@@ -18,16 +18,20 @@ socketio = SocketIO(app)
 
 demodulators = {}
 
-##
+
+
 @socketio.on('get_progress')
 def handle_my_custom_event(json):
-    print('received json: ' + str(json))
-    demodulator = demodulators[json['data']]
-    print(demodulator.file_info())
-    while True:
-        if len(demodulator.websocket_stack) > 0:
-            emit('upload_progress', demodulator.websocket_stack[0])
-            demodulator.websocket_stack.pop(0)
+    try:
+        print('received json: ' + str(json))
+        demodulator = demodulators[json['data']]
+        print(demodulator.file_info())
+        while True:
+            if len(demodulator.websocket_stack) > 0:
+                emit('upload_progress', demodulator.websocket_stack[0])
+                demodulator.websocket_stack.pop(0)
+    except Exception as e:
+        print(e)
 
 
 @app.route('/favicon.ico')
@@ -43,41 +47,49 @@ def index():
 
 @app.route('/convert_file', methods=['POST'])
 def convert_file():
-    r = request.form
-    datestamp = r['datestamp']
-    demodulator = demodulators[datestamp]
+    try:
+        r = request.form
+        datestamp = r['datestamp']
+        demodulator = demodulators[datestamp]
 
-    print('############')
-    print('converting')
-    print(demodulator.file_info())
-    print('############')
-    demodulator.process()
-    output_filepath = f'temp/{datestamp}/output.png'
-    demodulator.save_output_image(output_filepath)
-    filename = str(demodulator.file_info()['filename']).split('.')[0] + '.png'
-    return {"output_src": output_filepath, "output_name": filename}
+        print('############')
+        print('converting')
+        print(demodulator.file_info())
+        print('############')
+        demodulator.process()
+        output_filepath = f'static/temp/{datestamp}/output.png'
+        demodulator.save_output_image(output_filepath)
+        filename = str(demodulator.file_info()['filename']).split('.')[0] + '.png'
+        return {"output_src": output_filepath, "output_name": filename}
+    except Exception as e:
+        print(e)
+        return e
 
 
 @app.route('/load_file', methods=['POST'])
 def load_file():
-    r = request.form
-    dir_name = str(round(time.time() * 1000))
-    save_directory = f"temp/{dir_name}"
-    os.mkdir(save_directory)
+    try:
+        r = request.form
+        dir_name = str(round(time.time() * 1000))
+        save_directory = f"static/temp/{dir_name}"
+        os.mkdir(save_directory)
 
-    path = os.path.join(save_directory, secure_filename(request.files['file'].filename))
-    request.files['file'].save(path)
+        path = os.path.join(save_directory, secure_filename(request.files['file'].filename))
+        request.files['file'].save(path)
 
-    demodulator = Demodulator(path, lines_per_minute=120, tcp_stream=True)
+        demodulator = Demodulator(path, lines_per_minute=120, tcp_stream=True, quiet=True)
 
-    ret = demodulator.file_info()
-    ret['datestamp'] = dir_name
-    demodulators[dir_name] = demodulator
+        ret = demodulator.file_info()
+        ret['datestamp'] = dir_name
+        demodulators[dir_name] = demodulator
 
-    print('############')
-    print(f"filename: {secure_filename(request.files['file'].filename)}")
-    print('############')
-    return ret
+        print('############')
+        print(f"filename: {secure_filename(request.files['file'].filename)}")
+        print('############')
+        return ret
+    except Exception as e:
+        print(e)
+        return e
 
 
 if __name__ == "__main__":
