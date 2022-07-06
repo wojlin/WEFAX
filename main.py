@@ -54,7 +54,8 @@ def convert_file():
     demodulator.process()
     output_filepath = f'temp/{datestamp}/output.png'
     demodulator.save_output_image(output_filepath)
-    return send_from_directory('', output_filepath)
+    filename = str(demodulator.file_info()['filename']).split('.')[0] + '.png'
+    return {"output_src": output_filepath, "output_name": filename}
 
 
 @app.route('/load_file', methods=['POST'])

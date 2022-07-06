@@ -70,6 +70,8 @@ overflow:hidden;
     position:absolute;
     top: 2vh;
     left:50%;
+    width:100%;
+
     transform:translate(-50%,-50%);
 
     text-align:center;
@@ -329,7 +331,7 @@ overflow:hidden;
   border-spacing: 0 2vh;
 }
 
-#convert_options
+.convert_options
 {
      margin:auto;
     position:absolute;
@@ -338,7 +340,7 @@ overflow:hidden;
     transform:translate(-50%,-50%);
 }
 
-#button_convert, #button_other
+.button_convert, .button_other
 {
   align-items: center;
   background-color: rgba(255,255,255,0.0);
@@ -365,39 +367,49 @@ overflow:hidden;
   margin-top:2vh;
 }
 
-#button_convert
+.button_convert
 {
     background: rgba(110, 138, 110, 0.53);
 }
-#button_other
+.button_other
 {
     border: 1px solid rgba(255,255,255,0.5);
 }
 
-#button_convert:focus
+.button_convert:focus
 {
   color: #171e29;
 }
 
-#button_other:focus {
+.button_other:focus {
   color: #171e29;
 }
 
-#button_convert:hover{
+.button_convert:hover{
   border-color: rgba(110, 138, 110, 0.8);
   color: rgba(110, 138, 110, 1);
 }
-#button_other:hover {
+.button_other:hover {
   border-color: rgba(85, 85, 85, 0.8);
   color: rgba(85, 85, 85, 0.8);
 }
 
-#button_convert:active{
+.button_convert:active{
   border-color: #06f;
   color: #06f;
 }
 
-#button_other:active {
+.button_other:active {
   border-color: #06f;
   color: #06f;
+}
+
+#output_image
+{
+    border: black solid 1px;
+    width:80%;
+    position:absolute;
+    top: 10%;
+    left:50%;
+    transform:translate(-50%,-50%);
 }

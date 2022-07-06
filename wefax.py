@@ -46,9 +46,11 @@ class Demodulator:
         if self.sample_rate != 11025:
             self.audio_data, self.sample_rate, self.length = self.__resample(self.audio_data, self.sample_rate,
                                                                              self.length)
-
+        time.sleep(1)
         self.demodulated_data = self.__demodulate(self.audio_data)
+        time.sleep(1)
         self.digitalized_data = self.__digitalize(self.demodulated_data)
+        time.sleep(1)
         self.phasing_signals = self.__find_sync_pulse(self.digitalized_data, self.sample_rate, self.time_for_one_frame)
         self.start_frame = self.phasing_signals[-1]
 

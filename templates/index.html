@@ -94,15 +94,15 @@
             <td id="file_info_rate">none</td>
         </tr>
     </table>
-    <div id="convert_options">
-        <button onclick="convert_file();" id="button_convert">convert file</button>
-        <button onclick="location.reload()" id="button_other">upload other</button>
+    <div class="convert_options">
+        <button onclick="convert_file();" class="button_convert">convert file</button>
+        <button onclick="location.reload()" class="button_other">upload other</button>
     </div>
 </div>
 
 <div style="display:none;" id="content" class="box">
-
-    <p id="content-title">test</p>
+    <p style="display:none;" id="content-actual">empty</p>
+    <p id="content-title">empty</p>
     <div id="percentage_bar">
         <div class="loader-bg">
             <p id="percentage_text"></p>
@@ -130,11 +130,18 @@
     </div>
     <script src="{{url_for('static', filename='js/progress_bar.js')}}"></script>
     <script>
-        renderProgress(33);
+        renderProgress(0);
     </script>
 
 </div>
 
+<div style="display:block;" id="output" class="box">
+<img id="output_image" src="" alt=""/>
+<div class="convert_options">
+    <a onclick="convert_file();" class="button_convert" href="" download="d">download file</a>
+    <button onclick="location.reload()" class="button_other">convert other</button>
+</div>
+</div>
 
 <div id="alert">
     <span id="alert-log"></span>

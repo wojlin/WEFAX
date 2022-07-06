@@ -10,17 +10,23 @@ function renderProgress(progress)
     if(progress<25){
         var angle = -90 + (progress/100)*360;
         animate_0_25_b.style.transform = "rotate("+angle+"deg)";
+        animate_25_50_b.style.transform = "rotate(90deg)";
+        animate_50_75_b.style.transform = "rotate(90deg)";
+        animate_75_100_b.style.transform = "rotate(90deg)";
     }
     else if(progress>=25 && progress<50){
         var angle = -90 + ((progress-25)/100)*360;
          animate_0_25_b.style.transform = "rotate(0deg)";
          animate_25_50_b.style.transform = "rotate("+angle+"deg)";
+        animate_50_75_b.style.transform = "rotate(90deg)";
+        animate_75_100_b.style.transform = "rotate(90deg)";
     }
     else if(progress>=50 && progress<75){
         var angle = -90 + ((progress-50)/100)*360;
         animate_0_25_b.style.transform = "rotate(0deg)";
         animate_25_50_b.style.transform = "rotate(0deg)";
         animate_50_75_b.style.transform = "rotate("+angle+"deg)";
+        animate_75_100_b.style.transform = "rotate(90deg)";
     }
     else if(progress>=75 && progress<=100){
         var angle = -90 + ((progress-75)/100)*360;
