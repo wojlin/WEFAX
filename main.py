@@ -11,6 +11,9 @@ import time
 from flask_socketio import SocketIO
 from wefax import Demodulator
 from flask_socketio import send, emit
+import json
+import ast
+from distutils.dir_util import copy_tree
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -19,8 +22,9 @@ socketio = SocketIO(app)
 demodulators = {}
 
 
-def delete_directory(path: str):
+def delete_directory(path: str, datestamp: str):
     print(f"{path} deleted")
+    del demodulators[datestamp]
     shutil.rmtree(path)
 
 
@@ -39,7 +43,7 @@ def handle_my_custom_event(json):
                     print("MESSAGE")
                     if demodulator.websocket_stack[0]['message_content'] == 'convert_end':
                         print("END")
-                        threading.Timer(3600, delete_directory, args=(f"static/temp/{json['data']}",)).start()
+                        threading.Timer(3600, delete_directory, args=(f"static/temp/{json['data']}", json['data'],)).start()
                         notConverted = False
                 demodulator.websocket_stack.pop(0)
     except Exception as e:
@@ -60,6 +64,33 @@ def file_converter():
 @app.route('/live_converter')
 def live_converter():
     return render_template('live_converter.html')
+
+
+@app.route('/save_to_gallery', methods=['POST'])
+def save_to_gallery():
+    r = request.form
+    datestamp = r['datestamp']
+    folder_path = f'static/temp/{datestamp}/'
+    out_path = f'static/gallery/{datestamp}/'
+    copy_tree(folder_path, out_path)
+    file_info = demodulators[datestamp].file_info()
+    with open(out_path+'info.json', 'w') as f:
+        f.write(str(file_info))
+        f.close()
+
+    return f'files saved to {out_path}'
+
+
+@app.route('/get_gallery_files')
+def get_gallery_files():
+    dirnames = [f.path for f in os.scandir('static/gallery') if f.is_dir()]
+    gallery_files = {}
+    for directory in dirnames:
+        with open(f'static/gallery/{directory}/info.json', 'r') as f:
+            ret_json = ast.literal_eval(f.read())
+        gallery_files[directory] = ret_json
+
+    return gallery_files
 
 
 @app.route('/gallery')
@@ -84,10 +115,11 @@ def convert_file():
         print(demodulator.file_info())
         print('############')
         demodulator.process()
-        output_filepath = f'static/temp/{datestamp}/output.png'
+        filename = str(demodulator.file_info()['filename']).split('.')[0]
+        output_filepath = f'static/temp/{datestamp}/{filename}.png'
         demodulator.save_output_image(output_filepath)
         filename = str(demodulator.file_info()['filename']).split('.')[0] + '.png'
-        del demodulators[datestamp]
+
         return {"output_src": output_filepath, "output_name": filename}
     except Exception as e:
         print(e)

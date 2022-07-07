@@ -294,21 +294,23 @@
 {
      margin:auto;
     position:absolute;
-    bottom: 0%;
+    bottom: 10%;
     left:50%;
     transform:translate(-50%,-50%);
+    width:max-content;
 }
 
 .download_options
 {
      margin:auto;
     position:absolute;
-    bottom: -10%;
+    bottom: 0%;
     left:50%;
     transform:translate(-50%,-50%);
+    width:max-content;
 }
 
-.button_convert, .button_other
+.button_convert, .button_other, .button_save
 {
   align-items: center;
   background-color: rgba(255,255,255,0.0);
@@ -317,13 +319,12 @@
   cursor: pointer;
   fill: #000;
   font-family: Inter,sans-serif;
-  font-size: 2vh;
+  font-size: 1.8vh;
   font-weight: 600;
-  height: 5vh;
   justify-content: center;
   letter-spacing: -.8px;
   line-height: 2vh;
-  width: 20vh;
+  width: 17vh;
   outline: 0;
   text-align: center;
   text-decoration: none;
@@ -331,13 +332,18 @@
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
-  display:flex;
-  margin-top:2vh;
+  display:inline-block;
+  padding-top:1vh;
+  padding-bottom:1vh;
 }
 
 .button_convert
 {
     background: rgba(110, 138, 110, 0.53);
+}
+.button_save
+{
+    background: rgba(196, 184, 89, 0.53);
 }
 .button_other
 {
@@ -348,11 +354,17 @@
 {
   color: #171e29;
 }
-
+.button_save:focus
+{
+  color: #cfbe25;
+}
 .button_other:focus {
   color: #171e29;
 }
-
+.button_save:hover{
+  border-color: rgba(196, 184, 89, 0.8);
+  color: rgba(196, 184, 89, 1);
+}
 .button_convert:hover{
   border-color: rgba(110, 138, 110, 0.8);
   color: rgba(110, 138, 110, 1);
@@ -361,7 +373,10 @@
   border-color: rgba(85, 85, 85, 0.8);
   color: rgba(85, 85, 85, 0.8);
 }
-
+.button_save:active{
+  border-color: #06f;
+  color: #06f;
+}
 .button_convert:active{
   border-color: #06f;
   color: #06f;

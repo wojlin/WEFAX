@@ -143,8 +143,32 @@
     </a>
     <div class="download_options">
         <a class="button_convert" id="button_download" href="" download="">download file</a>
+        <button onclick="save_to_gallery();" class="button_save">save to gallery</button>
         <button onclick="location.reload()" class="button_other">convert other</button>
     </div>
+    <script>
+        function save_to_gallery()
+        {
+            var data = new FormData();
+            data.append('datestamp', document.getElementById("file_info_datestamp").innerHTML);
+          var req = fetch('/save_to_gallery', {
+              method: 'POST',
+              body: data
+            });
+
+            req.then(function(response) {
+          console.log('success');
+          response.text().then(function (text) {
+              console.log(text);
+            });
+
+        }, function(error) {
+          console.error('failed due to network error or cross domain')
+        })
+        }
+
+
+    </script>
 </div>
 
 <div id="alert">

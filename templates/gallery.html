@@ -1,9 +1,58 @@
 {% extends 'base.html' %}
 
 {% block header %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/gallery.css') }}">
 {% endblock %}
 
 {% block content %}
 <button onclick="window.location='/';" class="back_button">⮢</button>
-<p>not implemented yet</p>
+<div id="gallery">
+    <div id="gallery_content">
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+        <div onclick="console.log(this);" class="gallery_box">
+            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
+            <p class="gallery_filename">test.png</p>
+            <p class="gallery_date">2022-07-07 16:45</p>
+        </div>
+    </div>
+</div>
 {% endblock %}
