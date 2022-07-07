@@ -8,51 +8,46 @@
 <button onclick="window.location='/';" class="back_button">⮢</button>
 <div id="gallery">
     <div id="gallery_content">
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
-        <div onclick="console.log(this);" class="gallery_box">
-            <img class="gallery_icon" src="static/images/gallery.png" alt="image"/>
-            <p class="gallery_filename">test.png</p>
-            <p class="gallery_date">2022-07-07 16:45</p>
-        </div>
+
     </div>
+
+    <script>
+
+          var req = fetch('/get_gallery_files', {
+              method: 'GET'
+            });
+
+            req.then(function(response) {
+          console.log('success');
+          response.text().then(function (text) {
+              console.log(text);
+              json = JSON.parse(text);
+                gallery_parent = document.getElementById('gallery_content');
+
+                for(var i in json)
+                {
+                    var key = i;
+                    var val = json[i];
+                    var  div_str = '<div onclick="open_image(`'+key+'`);" class="gallery_box">'+
+                        '<img class="gallery_icon" src="static/gallery/'+key+'/'+val["image_filename"]+'" alt="image"/>'+
+                        '<p class="gallery_filename">'+val["image_filename"]+'</p>'+
+                        '<p class="gallery_date">'+val["date"]+'</p>'+
+                        '<p style="display:none;" class="gallery_info">'+JSON.stringify(val)+'</p>'+
+                        '</div>';
+                    gallery_parent.innerHTML += div_str;
+                }
+            });
+
+        }, function(error) {
+          console.error('failed due to network error or cross domain')
+        })
+
+        function open_image(datestamp)
+        {
+            console.log(datestamp);
+        }
+
+    </script>
+
 </div>
 {% endblock %}

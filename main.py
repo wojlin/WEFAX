@@ -1,3 +1,5 @@
+import datetime
+
 from flask import Flask, render_template, request, send_from_directory, send_file
 import threading
 import socket
@@ -74,6 +76,10 @@ def save_to_gallery():
     out_path = f'static/gallery/{datestamp}/'
     copy_tree(folder_path, out_path)
     file_info = demodulators[datestamp].file_info()
+    file_info['filename'] = str(file_info['filename']).split('.')[0]
+    file_info['audio_filename'] = str(file_info['filename']) + '.wav'
+    file_info['image_filename'] = str(file_info['filename']) + '.png'
+    file_info['date'] = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     with open(out_path+'info.json', 'w') as f:
         f.write(str(file_info))
         f.close()
@@ -81,9 +87,9 @@ def save_to_gallery():
     return f'files saved to {out_path}'
 
 
-@app.route('/get_gallery_files')
+@app.route('/get_gallery_files', methods=['GET'])
 def get_gallery_files():
-    dirnames = [f.path for f in os.scandir('static/gallery') if f.is_dir()]
+    dirnames = [str(f.path).split('/')[-1] for f in os.scandir('static/gallery') if f.is_dir()]
     gallery_files = {}
     for directory in dirnames:
         with open(f'static/gallery/{directory}/info.json', 'r') as f:
@@ -153,4 +159,9 @@ def load_file():
 
 
 if __name__ == "__main__":
+    try:
+        shutil.rmtree('static/temp/')
+    except Exception:
+        pass
+    os.mkdir('static/temp')
     socketio.run(app, host="localhost", port=2137, debug=True)
