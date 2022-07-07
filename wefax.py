@@ -60,6 +60,11 @@ class Demodulator:
                                                     self.sample_rate)
         print("#" * 50)
 
+        if self.stream:
+            message = {"data_type": "message",
+                       "message_content": "convert_end"}
+            self.__send_websocket_packet(message)
+
         if self.quiet:
             sys.stdout = sys.__stdout__
 

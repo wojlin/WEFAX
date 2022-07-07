@@ -18,6 +18,12 @@ socketio = SocketIO(app)
 
 demodulators = {}
 
+VERSION = 1.01
+
+
+def delete_directory(path: str):
+    print(f"{path} deleted")
+    shutil.rmtree(path)
 
 
 @socketio.on('get_progress')
@@ -26,9 +32,17 @@ def handle_my_custom_event(json):
         print('received json: ' + str(json))
         demodulator = demodulators[json['data']]
         print(demodulator.file_info())
-        while True:
+        notConverted = True
+        while notConverted:
             if len(demodulator.websocket_stack) > 0:
                 emit('upload_progress', demodulator.websocket_stack[0])
+                print(demodulator.websocket_stack[0])
+                if demodulator.websocket_stack[0]['data_type'] == 'message':
+                    print("MESSAGE")
+                    if demodulator.websocket_stack[0]['message_content'] == 'convert_end':
+                        print("END")
+                        threading.Timer(3600, delete_directory, args=(f"static/temp/{json['data']}",)).start()
+                        notConverted = False
                 demodulator.websocket_stack.pop(0)
     except Exception as e:
         print(e)
@@ -60,6 +74,7 @@ def convert_file():
         output_filepath = f'static/temp/{datestamp}/output.png'
         demodulator.save_output_image(output_filepath)
         filename = str(demodulator.file_info()['filename']).split('.')[0] + '.png'
+        del demodulators[datestamp]
         return {"output_src": output_filepath, "output_name": filename}
     except Exception as e:
         print(e)
