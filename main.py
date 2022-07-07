@@ -18,8 +18,6 @@ socketio = SocketIO(app)
 
 demodulators = {}
 
-VERSION = 1.01
-
 
 def delete_directory(path: str):
     print(f"{path} deleted")

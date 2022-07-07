@@ -96,6 +96,30 @@ body:after {
     animation-fill-mode:forwards !important;
 }
 
+#title
+{
+    text-align: center;
+    font-size:6vh;
+    width:100%;
+    color:white;
+    position: absolute;
+    top: 5%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-family: Inter,sans-serif;
+}
+
+#github
+{
+    text-align: center;
+    font-size:1vh;
+    color:#2c6a7d;
+    position: absolute;
+    bottom: 2vh;
+    right:1vh;
+    font-family: Inter,sans-serif;
+
+}
 
 .box
 {

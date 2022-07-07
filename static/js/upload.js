@@ -1,4 +1,5 @@
 //selecting all required elements
+const title_panel = document.getElementById("title");
 const upload_panel = document.getElementById("upload");
 const file_info = document.getElementById("file_info");
 const dropArea = document.querySelector(".drag-area"),
@@ -33,6 +34,7 @@ function upload(file)
             document.getElementById('file_info_channels').innerHTML = json['channels'];
             document.getElementById('file_info_length').innerHTML = parseFloat(json['length']).toFixed(2) + ' s';
             document.getElementById('file_info_rate').innerHTML = parseFloat(json['sample_rate'])/1000 + ' KHz';
+            title_panel.classList.add("slide_out");
             upload_panel.classList.add("slide_out");
             file_info.style.display = 'block';
             file_info.classList.add("slide_in");
