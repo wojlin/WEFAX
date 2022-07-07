@@ -52,6 +52,21 @@ def favicon():
                                'favicon.png', mimetype='image/vnd.microsoft.icon')
 
 
+@app.route('/file_converter')
+def file_converter():
+    return render_template('file_converter.html')
+
+
+@app.route('/live_converter')
+def live_converter():
+    return render_template('live_converter.html')
+
+
+@app.route('/gallery')
+def gallery():
+    return render_template('gallery.html')
+
+
 @app.route('/')
 def index():
     return render_template('index.html')

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WEFAX</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
+    {% block header %}{% endblock %}
+</head>
+<body>
+<h1 id="title">WEFAX DECODER</h1>
+{% block content %}{% endblock %}
+<a id="github" href="https://github.com/wojlin" target="_blank">https://github.com/wojlin</a>
+<div class="wave"></div>
+</body>
+</html>

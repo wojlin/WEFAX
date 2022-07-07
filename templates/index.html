@@ -1,158 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>WEFAX</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
-</head>
-<body>
-<h1 id="title">WEFAX DECODER</h1>
-<div id="upload" class="box">
-    <div class="drag-area">
-        <div class="icon"><i class="fas fa-cloud-upload-alt"></i></div>
-        <header>Drag & Drop to Upload File</header>
-        <span>OR</span>
-        <button>Browse File</button>
-        <input type="file" multiple="multiple" hidden>
-    </div>
+{% extends 'base.html' %}
 
-</div>
-<script>
-    function toggle_options(element, parent, hide)
-    {
-        if( hide != '')
-        {
-            document.getElementById(hide).style.display = 'none';
-        }
-        if(document.getElementById(element).style.display == 'block')
-        {
-            document.getElementById(element).style.display = 'none';
-        }
-        else
-        {
-            document.getElementById(element).style.display = 'block';
+{% block header %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/index.css') }}">
+{% endblock %}
 
-            window.onclick = function(event)
-            {
-                event.stopPropagation();
-                event.cancelBubble=true;
-               if (event.target != document.getElementById(element) && event.target != parent)
-               {
-                  document.getElementById(element).style.display = "none";
-                }
-            }
-        }
-    }
-
-    function createSelection(field, start, end)
-    {
-        if( field.createTextRange )
-        {
-              var selRange = field.createTextRange();
-              selRange.collapse(true);
-              selRange.moveStart('character', start);
-              selRange.moveEnd('character', end);
-              selRange.select();
-              field.focus();
-        }
-        else if( field.setSelectionRange )
-        {
-              field.focus();
-              field.setSelectionRange(start, end);
-        }
-        else if( typeof field.selectionStart != 'undefined' )
-        {
-              field.selectionStart = start;
-              field.selectionEnd = end;
-              field.focus();
-        }
-    }
-
-</script>
-
-<div style="display:none;" id="file_info" class="box">
-    <p style="visibility: hidden" id="file_info_datestamp">none</p>
-    <table id="file_info_table">
-        <tr>
-            <th>filename</th>
-            <td>:</td>
-            <td id="file_info_filename">none</td>
-        </tr>
-        <tr>
-            <th>audio channels</th>
-            <td>:</td>
-            <td id="file_info_channels">none</td>
-        </tr>
-        <tr>
-            <th>audio length</th>
-            <td>:</td>
-            <td id="file_info_length">none</td>
-        </tr>
-        <tr>
-            <th>sample rate</th>
-            <td>:</td>
-            <td id="file_info_rate">none</td>
-        </tr>
-    </table>
-    <div class="convert_options">
-        <button onclick="convert_file();" class="button_convert">convert file</button>
-        <button onclick="location.reload()" class="button_other">upload other</button>
-    </div>
-</div>
-
-<div style="display:none;" id="content" class="box">
-    <p style="display:none;" id="content-actual">empty</p>
-    <p id="content-title">empty</p>
-    <div id="percentage_bar">
-        <div class="loader-bg">
-            <p id="percentage_text"></p>
+{% block content %}
+<div id="menu">
+    <a href="/file_converter">
+        <div class="choice_panel">
+            <p>file converter</p>
+            <img src="/static/images/file_converter.png" alt="file converter"/>
         </div>
-        <div class="spiner-holder-one animate-0-25-a">
-            <div id="animate-0-25-b" class="spiner-holder-two animate-0-25-b">
-                <div class="loader-spiner" style=""></div>
-            </div>
-        </div>
-        <div class="spiner-holder-one animate-25-50-a">
-            <div id="animate-25-50-b" class="spiner-holder-two animate-25-50-b">
-                <div class="loader-spiner"></div>
-            </div>
-        </div>
-        <div class="spiner-holder-one animate-50-75-a">
-            <div id="animate-50-75-b" class="spiner-holder-two animate-50-75-b">
-                <div class="loader-spiner"></div>
-            </div>
-        </div>
-        <div class="spiner-holder-one animate-75-100-a">
-            <div id="animate-75-100-b" class="spiner-holder-two animate-75-100-b">
-                <div class="loader-spiner"></div>
-            </div>
-        </div>
-    </div>
-    <script src="{{url_for('static', filename='js/progress_bar.js')}}"></script>
-    <script>
-        renderProgress(0);
-    </script>
-
-</div>
-
-<div style="display:none;" id="output" class="box">
-    <a id="output_image_href" href="" target="_blank">
-        <img id="output_image" src="" alt="output"/>
     </a>
-    <div class="download_options">
-        <a class="button_convert" id="button_download" href="" download="">download file</a>
-        <button onclick="location.reload()" class="button_other">convert other</button>
-    </div>
+    <a href="/live_converter">
+        <div class="choice_panel">
+            <p>live converter</p>
+            <img src="/static/images/live_converter.png" alt="live converter"/>
+        </div>
+    </a>
+    <a href="/gallery">
+        <div class="choice_panel">
+            <p>gallery</p>
+            <img src="/static/images/gallery.png" alt="gallery"/>
+        </div>
+    </a>
 </div>
-
-<div id="alert">
-    <span id="alert-log"></span>
-    <button type="button" onclick='this.parentElement.style.display = "none";location.reload();'>close</button>
-</div>
-<script src="static/js/socketio.js"></script>
-<script src="static/js/upload.js"></script>
-<script src="static/js/convert_file.js"></script>
-<a id="github" href="https://github.com/wojlin" target="_blank">https://github.com/wojlin</a>
-<div class="wave"></div>
-</body>
-</html>
+{% endblock %}
