@@ -58,8 +58,10 @@
             var channels_elem = document.getElementById("audio-info-channels");
             var rate_elem = document.getElementById("audio-info-rate");
             var image_elem = document.getElementById("gallery-image");
+            var download_elem = document.getElementById("button_download");
             var audio_elem = document.getElementById("player");
             var json = JSON.parse(obj.querySelector(".gallery_info").innerHTML);
+
             console.log(datestamp);
             console.log(json);
             var path = "/static/gallery/"+datestamp+"/";
@@ -68,6 +70,8 @@
             length_elem.innerHTML = parseFloat(json['length']).toFixed(2) + 's';
             channels_elem.innerHTML = json["channels"];
             rate_elem.innerHTML = parseFloat(json['sample_rate'])/1000 + 'KHz';
+            download_elem.href = path+"files.zip";
+            download_elem.download = json["filename"]+".zip";
         }
 
 

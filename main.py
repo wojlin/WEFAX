@@ -16,6 +16,8 @@ from flask_socketio import send, emit
 import json
 import ast
 from distutils.dir_util import copy_tree
+from zipfile import ZipFile
+import zipfile
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -77,12 +79,20 @@ def save_to_gallery():
     copy_tree(folder_path, out_path)
     file_info = demodulators[datestamp].file_info()
     file_info['filename'] = str(file_info['filename']).split('.')[0]
-    file_info['audio_filename'] = str(file_info['filename']) + '.wav'
-    file_info['image_filename'] = str(file_info['filename']) + '.png'
+    audio_filename = str(file_info['filename']) + '.wav'
+    image_filename = str(file_info['filename']) + '.png'
+    file_info['audio_filename'] = audio_filename
+    file_info['image_filename'] = image_filename
     file_info['date'] = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     with open(out_path+'info.json', 'w') as f:
         f.write(str(file_info))
         f.close()
+
+    with ZipFile(f'{out_path}/files.zip', 'w') as zipObj:
+        zipObj.write(os.path.join(out_path, audio_filename), audio_filename, zipfile.ZIP_DEFLATED)
+        zipObj.write(os.path.join(out_path, image_filename), image_filename, zipfile.ZIP_DEFLATED)
+        zipObj.write(os.path.join(out_path, 'info.json'), 'info.json', zipfile.ZIP_DEFLATED)
+        zipObj.close()
 
     return f'files saved to {out_path}'
 

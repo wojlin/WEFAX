@@ -78,3 +78,8 @@ pip install -r requirements.txt
 ```
 python3 main.py
 ```
+
+### TODO:
+- more responsive progress bar
+- live decoding 
+- tweaks in frontend style
