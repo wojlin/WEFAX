@@ -47,7 +47,8 @@ def handle_my_custom_event(json):
                     print("MESSAGE")
                     if demodulator.websocket_stack[0]['message_content'] == 'convert_end':
                         print("END")
-                        threading.Timer(3600, delete_directory, args=(f"static/temp/{json['data']}", json['data'],)).start()
+                        threading.Timer(3600, delete_directory,
+                                        args=(f"static/temp/{json['data']}", json['data'],)).start()
                         notConverted = False
                 demodulator.websocket_stack.pop(0)
     except Exception as e:
@@ -70,6 +71,15 @@ def live_converter():
     return render_template('live_converter.html')
 
 
+@app.route('/delete_entry', methods=['POST'])
+def delete_entry():
+    r = request.form
+    entry = r['datestamp']
+    delete_path = f'static/gallery/{entry}'
+    shutil.rmtree(delete_path)
+    return "success"
+
+
 @app.route('/save_to_gallery', methods=['POST'])
 def save_to_gallery():
     r = request.form
@@ -84,7 +94,7 @@ def save_to_gallery():
     file_info['audio_filename'] = audio_filename
     file_info['image_filename'] = image_filename
     file_info['date'] = str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    with open(out_path+'info.json', 'w') as f:
+    with open(out_path + 'info.json', 'w') as f:
         f.write(str(file_info))
         f.close()
 
@@ -105,7 +115,7 @@ def get_gallery_files():
         with open(f'static/gallery/{directory}/info.json', 'r') as f:
             ret_json = ast.literal_eval(f.read())
         gallery_files[directory] = ret_json
-    gallery_files = str(dict( sorted(gallery_files.items(), key=lambda x: x[0].lower(), reverse=True) )).replace("'", '"')
+    gallery_files = str(dict(sorted(gallery_files.items(), key=lambda x: x[0].lower(), reverse=True))).replace("'", '"')
     print(gallery_files)
     return gallery_files
 

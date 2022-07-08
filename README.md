@@ -83,3 +83,4 @@ python3 main.py
 - more responsive progress bar
 - live decoding 
 - tweaks in frontend style
+- create tests

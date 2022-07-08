@@ -59,6 +59,7 @@
             var rate_elem = document.getElementById("audio-info-rate");
             var image_elem = document.getElementById("gallery-image");
             var download_elem = document.getElementById("button_download");
+            var delete_elem = document.getElementById("button_delete");
             var audio_elem = document.getElementById("player");
             var json = JSON.parse(obj.querySelector(".gallery_info").innerHTML);
 
@@ -70,8 +71,32 @@
             length_elem.innerHTML = parseFloat(json['length']).toFixed(2) + 's';
             channels_elem.innerHTML = json["channels"];
             rate_elem.innerHTML = parseFloat(json['sample_rate'])/1000 + 'KHz';
+            delete_elem.onclick = function() { delete_entry(datestamp);};
             download_elem.href = path+"files.zip";
             download_elem.download = json["filename"]+".zip";
+        }
+
+        function delete_entry(datestamp)
+        {
+            console.log(datestamp);
+            var data = new FormData();
+
+                data.append('datestamp', datestamp);
+            var req = fetch('/delete_entry', {
+              method: 'POST',
+              body: data
+            });
+
+                req.then(function(response) {
+                  console.log('success');
+                  response.text().then(function (text) {
+                      console.log(text);
+                      location.reload();
+                    });
+
+                }, function(error) {
+                  console.error('failed due to network error or cross domain')
+                })
         }
 
 
@@ -114,7 +139,7 @@
 
          <div class="options">
             <a class="button_convert" id="button_download" href="" download="">download files</a>
-            <button onclick="" class="button_delete">delete entry</button>
+            <button onclick="" id="button_delete" class="button_delete">delete entry</button>
         </div>
 
     </div>
