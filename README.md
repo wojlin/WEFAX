@@ -84,3 +84,4 @@ python3 main.py
 - live decoding 
 - tweaks in frontend style
 - create tests
+- add alerts and bugs report
