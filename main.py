@@ -1,5 +1,5 @@
 import datetime
-
+from collections import OrderedDict
 from flask import Flask, render_template, request, send_from_directory, send_file
 import threading
 import socket
@@ -95,7 +95,8 @@ def get_gallery_files():
         with open(f'static/gallery/{directory}/info.json', 'r') as f:
             ret_json = ast.literal_eval(f.read())
         gallery_files[directory] = ret_json
-
+    gallery_files = str(dict( sorted(gallery_files.items(), key=lambda x: x[0].lower(), reverse=True) )).replace("'", '"')
+    print(gallery_files)
     return gallery_files
 
 

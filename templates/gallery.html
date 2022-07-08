@@ -6,12 +6,13 @@
 
 {% block content %}
 <button onclick="window.location='/';" class="back_button">⮢</button>
-<div id="gallery">
-    <div id="gallery_content">
+<div id="content">
+    <div id="gallery">
+        <div id="gallery_content">
 
-    </div>
+        </div>
 
-    <script>
+        <script>
 
           var req = fetch('/get_gallery_files', {
               method: 'GET'
@@ -23,31 +24,95 @@
               console.log(text);
               json = JSON.parse(text);
                 gallery_parent = document.getElementById('gallery_content');
-
+                var first = true;
                 for(var i in json)
                 {
+
                     var key = i;
                     var val = json[i];
-                    var  div_str = '<div onclick="open_image(`'+key+'`);" class="gallery_box">'+
+                    var  div_str = '<div id="'+key+'" onclick="open_image(`'+key+'`, this);" class="gallery_box">'+
                         '<img class="gallery_icon" src="static/gallery/'+key+'/'+val["image_filename"]+'" alt="image"/>'+
                         '<p class="gallery_filename">'+val["image_filename"]+'</p>'+
                         '<p class="gallery_date">'+val["date"]+'</p>'+
                         '<p style="display:none;" class="gallery_info">'+JSON.stringify(val)+'</p>'+
                         '</div>';
                     gallery_parent.innerHTML += div_str;
+                    if(first == true)
+                    {
+                        open_image(key, document.getElementById(key));
+                        first = false;
+                    }
                 }
+
+
             });
 
         }, function(error) {
           console.error('failed due to network error or cross domain')
         })
 
-        function open_image(datestamp)
+        function open_image(datestamp, obj)
         {
+
+            var length_elem = document.getElementById("audio-info-length");
+            var channels_elem = document.getElementById("audio-info-channels");
+            var rate_elem = document.getElementById("audio-info-rate");
+            var image_elem = document.getElementById("gallery-image");
+            var audio_elem = document.getElementById("player");
+            var json = JSON.parse(obj.querySelector(".gallery_info").innerHTML);
             console.log(datestamp);
+            console.log(json);
+            var path = "/static/gallery/"+datestamp+"/";
+            image_elem.src = path+json["image_filename"];
+            audio_elem.src = path+json["audio_filename"];
+            length_elem.innerHTML = parseFloat(json['length']).toFixed(2) + 's';
+            channels_elem.innerHTML = json["channels"];
+            rate_elem.innerHTML = parseFloat(json['sample_rate'])/1000 + 'KHz';
         }
 
-    </script>
 
+        </script>
+
+    </div>
+    <div id="gallery-panel">
+        <img id="gallery-image" src="" alt=""/>
+
+        <audio controls id="player" src=""></audio>
+        <div id="audio-info">
+            <table>
+                <tbody>
+                    <tr>
+                    <td class="table-title">length:</td>
+                    <td id="audio-info-length" class="table-content">-</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table>
+                <tbody>
+                    <tr>
+                    <td class="table-title">channels:</td>
+                    <td id="audio-info-channels" class="table-content">-</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table style="width:40%;float:right;">
+                <tbody>
+                    <tr>
+                    <td class="table-title">sample rate:</td>
+                    <td id="audio-info-rate" class="table-content">-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+
+        </div>
+
+         <div class="options">
+            <a class="button_convert" id="button_download" href="" download="">download files</a>
+            <button onclick="" class="button_delete">delete entry</button>
+        </div>
+
+    </div>
 </div>
 {% endblock %}

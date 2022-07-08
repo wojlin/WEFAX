@@ -1,11 +1,39 @@
-#gallery
+#content
 {
     position: absolute;
     top: 50%;
     left:50%;
     transform:translate(-50%,-50%);
+    animation: slide_in 1s;
+    animation-fill-mode:forwards;
+    z-index:100;
+    width:max-content;
+}
 
 
+#gallery-panel
+{
+    background: rgba(54, 54, 54, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2.4px);
+    -webkit-backdrop-filter: blur(2.4px);
+    border: 1px solid rgba(54, 54, 54, 0.41);
+
+    width: 60vh;
+    height: 60vh;
+    overflow:hidden;
+    font-family: Arial;
+    display:inline-block;
+    padding:0;
+}
+
+
+
+
+
+#gallery
+{
     background: rgba(54, 54, 54, 0.5);
     border-radius: 16px;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -18,9 +46,7 @@
     overflow:hidden;
     font-family: Arial;
 
-    animation: slide_in 1s;
-    animation-fill-mode:forwards;
-    z-index:100;
+    display:inline-block;
 
     padding:0;
 
@@ -70,4 +96,60 @@ width:auto;
     margin-top:0px;
     margin-bottom:8px;
     padding-bottom:6px;
+}
+
+.options
+{
+     margin:auto;
+    position:absolute;
+    bottom: 0%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:max-content;
+}
+
+
+#gallery-image
+{
+    width:80%;
+    display:block;
+    margin:auto;
+    margin-top:2vh;
+    margin-bottom:2vh;
+
+}
+
+
+
+
+audio {
+    filter: sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%);
+    width: 80%;
+    margin:auto;
+    display:block;
+    height: 4vh;
+}
+
+#audio-info {
+    width:80%;
+    margin:auto;
+    display:table;
+    margin-top:1vh;
+    font-size:1.6vh;
+}
+
+table
+{
+width:28%;
+display:inline-block;
+}
+
+.table-title
+{
+    font-weight:bold;
+}
+
+.table-content
+{
+    color: rgba(255,255,255,0.5);
 }
