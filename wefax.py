@@ -1,8 +1,6 @@
 import time
-
 from scipy.io import wavfile
 import scipy.signal
-from scipy import signal
 import numpy as np
 import scipy.io
 from matplotlib import pyplot as plt
@@ -12,10 +10,7 @@ from matplotlib.ticker import FormatStrFormatter
 import matplotlib.animation as animation
 import sys
 import os
-import threading
-import socket
-import asyncio
-import websockets
+
 
 class Demodulator:
     def __init__(self, filepath: str,
@@ -96,7 +91,7 @@ class Demodulator:
             spec = plt.mlab.specgram(sound[i * jump:(i * jump) + window], Fs=rate, detrend='linear',
                                      scale_by_freq=False)
 
-            arr = np.transpose(spec[0])[...,::-1,:]
+            arr = np.transpose(spec[0])[..., ::-1, :]
 
             im.set_array(arr)
             arrange = [0, arr.shape[1]]
@@ -218,7 +213,7 @@ class Demodulator:
                     if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "finding sync pulse",
-                                   "percentage": (i/len(data))*100}
+                                   "percentage": (i / len(data)) * 100}
                         self.__send_websocket_packet(message)
                 elif corr > peaks[-1][1]:
                     # else if this value is bigger than the previous maximum, set this one
@@ -285,7 +280,7 @@ class Demodulator:
                     if self.stream:
                         message = {"data_type": "progress_bar",
                                    "progress_title": "converting signal to image",
-                                   "percentage": (py + 1)/h*100}
+                                   "percentage": (py + 1) / h * 100}
                         self.__send_websocket_packet(message)
                 px = 0
                 py += 1
@@ -342,7 +337,7 @@ class Demodulator:
                 if self.stream:
                     message = {"data_type": "progress_bar",
                                "progress_title": "merging channels",
-                               "percentage": (p+1)/parts*100}
+                               "percentage": (p + 1) / parts * 100}
                     self.__send_websocket_packet(message)
 
             one_channel_audio.append(np.divide(np.add(audio_channels[p][0], audio_channels[p][1]), 2))
@@ -391,7 +386,7 @@ if __name__ == "__main__":
     print(demodulator.file_info())
     input()
     demodulator.process()
-    #demodulator.animated_spectrum()
-    #demodulator.show_output_image()
-    #demodulator.signal_chart(0, 25.5)
-    #demodulator.save_output_image("input.png")
+    # demodulator.animated_spectrum()
+    # demodulator.show_output_image()
+    # demodulator.signal_chart(0, 25.5)
+    # demodulator.save_output_image("input.png")
