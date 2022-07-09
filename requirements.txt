@@ -1,3 +1,4 @@
+attrs==21.4.0
 bidict==0.22.0
 CacheControl==0.12.11
 cachy==0.3.0
@@ -19,6 +20,7 @@ fonttools==4.34.4
 html5lib==1.1
 idna==3.3
 importlib-metadata==4.12.0
+iniconfig==1.1.1
 itsdangerous==2.1.2
 jeepney==0.7.1
 Jinja2==3.1.2
@@ -36,13 +38,19 @@ Pillow==9.2.0
 pipenv==2022.6.7
 pkginfo==1.8.3
 platformdirs==2.5.2
+pluggy==1.0.0
 poetry==1.1.13
 poetry-core==1.0.8
 ptyprocess==0.7.0
+py==1.11.0
 pycosat==0.6.3
 pycparser==2.21
 pylev==1.4.0
 pyparsing==3.0.9
+pytest==7.1.2
+pytest-html==3.1.1
+pytest-metadata==2.0.1
+pytest_check==1.0.5
 python-dateutil==2.8.2
 python-engineio==4.3.3
 python-socketio==5.7.0
@@ -54,6 +62,7 @@ scipy==1.8.1
 SecretStorage==3.3.1
 shellingham==1.4.0
 six==1.16.0
+tomli==2.0.1
 tomlkit==0.11.0
 urllib3==1.26.9
 virtualenv==20.14.1

@@ -3,8 +3,6 @@ import pytest_check as check
 import logging
 import os
 
-import main
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('my-even-logger')
 
@@ -54,10 +52,6 @@ def test_project_files_structure():
 
     for file in js_files:
         check.equal(check_file_presence(file), True)
-
-
-def launch_server():
-    main.start_server()
 
 
 if __name__ == '__main__':
