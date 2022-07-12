@@ -4,6 +4,7 @@ import logging
 import os
 from os import listdir
 from os.path import isfile, join
+import importlib
 
 from wefax import Demodulator
 
@@ -38,7 +39,7 @@ def test_project_directory_structure():
 
 
 def test_project_files_structure():
-    py_files = ['main.py', 'progress_bar.py', 'wefax.py']
+    py_files = ['main.py', 'progress_bar.py', 'wefax.py', 'wefax_live.py']
     html_files = ['templates/base.html', 'templates/index.html', 'templates/file_converter.html',
                   'templates/live_converter.html', 'templates/gallery.html']
     css_files = ['static/css/file_converter.css', 'static/css/live_converter.css', 'static/css/index.css',
@@ -71,6 +72,16 @@ def test_wefax_filetype_input():
                 logger.info(f'invalid filetype detected for invalid file: {test_files_path}{file}')
             elif str(e) == "INVALID FILETYPE: only .wav files are supported at this moment" and file_ext == 'wav':
                 logger.error(f'invalid filetype detected for a valid file: : {test_files_path}{file}')
+
+
+def test_imported_packages():
+    modules = ['flask', 'flask_socketio', 'werkzeug', 'numpy', 'scipy', 'PIL', 'matplotlib', 'pyaudio', 'wave']
+    for module in modules:
+        try:
+            importlib.import_module(module)
+            logger.info(f'{module} imported!')
+        except ImportError:
+            logger.error(f'{module} not imported!')
 
 
 if __name__ == '__main__':
