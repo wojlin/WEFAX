@@ -85,3 +85,17 @@ python3 main.py
 - tweaks in frontend style
 - create tests
 - add alerts and bugs report
+
+
+### BUGS AND PROBLEMS:
+
+Port audio error in sunddevice package
+```commandline
+raise OSError('PortAudio library not found')
+OSError: PortAudio library not found
+```
+solution:
+```commandline
+sudo apt-get install libportaudio2
+sudo apt-get install libasound-dev
+```

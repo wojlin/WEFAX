@@ -18,6 +18,12 @@ class Demodulator:
                  quiet: bool = False,
                  tcp_stream: bool = True):
 
+        if not os.path.exists(filepath):
+            raise Exception(f"INVALID FILE: file at path: {filepath} does not exist")
+
+        if filepath.split('.')[-1] != 'wav':
+            raise Exception("INVALID FILETYPE: only .wav files are supported at this moment")
+
         self.filepath = filepath
         self.filename = self.filepath.split('/')[-1]
         self.lines_per_minute = lines_per_minute

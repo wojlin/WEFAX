@@ -2,6 +2,10 @@ import pytest
 import pytest_check as check
 import logging
 import os
+from os import listdir
+from os.path import isfile, join
+
+from wefax import Demodulator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('my-even-logger')
@@ -54,8 +58,21 @@ def test_project_files_structure():
         check.equal(check_file_presence(file), True)
 
 
+def test_wefax_filetype_input():
+    test_files_path = 'test_files/'
+    onlyfiles = [f for f in listdir(test_files_path) if isfile(join(test_files_path, f))]
+    for file in onlyfiles:
+        file_ext = str(file).split('.')[-1]
+        try:
+            demodulator = Demodulator(test_files_path + file, lines_per_minute=120, tcp_stream=True, quiet=True)
+            logger.info(f'demodulator worked for file: {test_files_path}{file}')
+        except Exception as e:
+            if str(e) == "INVALID FILETYPE: only .wav files are supported at this moment" and file_ext != 'wav':
+                logger.info(f'invalid filetype detected for invalid file: {test_files_path}{file}')
+            elif str(e) == "INVALID FILETYPE: only .wav files are supported at this moment" and file_ext == 'wav':
+                logger.error(f'invalid filetype detected for a valid file: : {test_files_path}{file}')
+
+
 if __name__ == '__main__':
-    logger.info(' About to start the tests ')
-    pytest.main(args=[os.path.abspath(__file__), '--html=report.html', '--self-contained-html', '--color=yes',
-                      '--show-capture=log'])
-    logger.info(' Done executing the tests ')
+    pytest.main(args=[os.path.abspath(__file__), '--html=report.html', '-v', '--self-contained-html', '--color=yes',
+                      '--show-capture=log', '--capture=tee-sys'])

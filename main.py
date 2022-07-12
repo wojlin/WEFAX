@@ -1,23 +1,29 @@
 import datetime
-from collections import OrderedDict
-from flask import Flask, render_template, request, send_from_directory, send_file
 import threading
-import socket
-import time
 import os
 from flask import Flask, send_from_directory, render_template, request, send_file
 from werkzeug.utils import secure_filename
-from werkzeug.datastructures import FileStorage
 import shutil
 import time
 from flask_socketio import SocketIO
 from wefax import Demodulator
-from flask_socketio import send, emit
-import json
+from flask_socketio import emit
 import ast
 from distutils.dir_util import copy_tree
 from zipfile import ZipFile
 import zipfile
+import logging
+import sys
+import signal
+
+
+def stop(signum, frame):
+    print('exit')
+    sys.exit(0)
+
+
+logging.getLogger('werkzeug').disabled = True
+signal.signal(signal.SIGINT, stop)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
