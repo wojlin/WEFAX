@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 import shutil
 import time
 from flask_socketio import SocketIO
-from wefax import Demodulator
+
 from flask_socketio import emit
 import ast
 from distutils.dir_util import copy_tree
@@ -15,6 +15,9 @@ import zipfile
 import logging
 import sys
 import signal
+
+from wefax import Demodulator
+from wefax_live import LiveDemodulator
 
 
 def stop(signum, frame):
@@ -67,16 +70,6 @@ def favicon():
                                'favicon.png', mimetype='image/vnd.microsoft.icon')
 
 
-@app.route('/file_converter')
-def file_converter():
-    return render_template('file_converter.html')
-
-
-@app.route('/live_converter')
-def live_converter():
-    return render_template('live_converter.html')
-
-
 @app.route('/delete_entry', methods=['POST'])
 def delete_entry():
     r = request.form
@@ -126,6 +119,45 @@ def get_gallery_files():
     return gallery_files
 
 
+@app.route('/get_sound_devices', methods=['POST'])
+def delete_entry():
+    r = request.form
+    datestamp = r['datestamp']
+    demodulator = demodulators[datestamp]
+    return demodulator.get_devices()
+
+
+@app.route('/file_converter')
+def file_converter():
+    return render_template('file_converter.html')
+
+
+@app.route('/live_converter')
+def live_converter():
+
+    try:
+        r = request.form
+        dir_name = str(round(time.time() * 1000))
+        save_directory = f"static/temp/{dir_name}"
+        os.mkdir(save_directory)
+
+        demodulator = LiveDemodulator(path=save_directory)
+
+        ret = demodulator.file_info()
+        ret['datestamp'] = dir_name
+        demodulators[dir_name] = demodulator
+
+        print('############')
+        print(f"filename: {secure_filename(request.files['file'].filename)}")
+        print('############')
+        return render_template('live_converter.html')
+    except Exception as e:
+        print(e)
+        return e
+
+
+
+
 @app.route('/gallery')
 def gallery():
     return render_template('gallery.html')
@@ -134,6 +166,7 @@ def gallery():
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 
 @app.route('/convert_file', methods=['POST'])
