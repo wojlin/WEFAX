@@ -8,22 +8,59 @@ from scipy import signal
 from scipy.io import wavfile
 import io
 from scipy.io.wavfile import read, write
+from matplotlib.ticker import FormatStrFormatter
+import numpy as np
+
+from PIL import Image
+from matplotlib import cm
 
 
 class DataPacket:
-    def __init__(self, filepath):
-        self.sample_rate, self.samples = wavfile.read(filepath)
+    def __init__(self, filepath, duration, number):
+        self.duration = duration
+        self.number = number
+        self.filepath = filepath
+        self.directory = '/'.join(str(self.filepath).split('/')[:-1]) + '/'
+        self.sample_rate, self.samples = wavfile.read(self.filepath)
 
-    def spectrogram(self):
+    def spectrogram_chart(self, save: bool = True, show: bool = False):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
-        plt.pcolormesh(times, frequencies, spectrogram)
-        plt.imshow(spectrogram)
+        plt.pcolormesh(times, frequencies, spectrogram, cmap='gist_earth')
         plt.ylabel('Frequency [Hz]')
         plt.xlabel('Time [sec]')
-        plt.show()
+
+        max_freq = 5000
+        arrange_y = [0, max_freq]
+        arrange_labels_y = [f"{int(frequencies[0])}Hz", f"{max_freq}Hz"]
+        plt.yticks(arrange_y, arrange_labels_y)
+
+        arrange_x = [0, len(self.samples) / self.sample_rate - 0.03]
+        arrange_labels_x = [f"{self.number * self.duration}s", f"{self.number * self.duration + self.duration}s"]
+        plt.xticks(arrange_x, arrange_labels_x)
+
+        plt.title(f'{self.filepath}')
+
+        if save:
+            plt.savefig(f'{self.directory}{self.number}_chart.png')
+        if show:
+            plt.show()
+
+    def spectrogram_image(self, save: bool = True):
+        frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
+
+        spectrogram_normalized = (spectrogram - np.min(spectrogram)) / (np.max(spectrogram) - np.min(spectrogram))
+        print(np.max(spectrogram_normalized))
+
+        img = Image.fromarray((cm.gist_earth(spectrogram_normalized) * 255).astype(np.uint8))
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+        if save:
+            img.save(f'{self.directory}{self.number}_image.png')
+
+        return img
 
     def __repr__(self):
-        return f'packet len: {len(self.data)}  sample rate:{self.samplerate}'
+        return f'part: {self.number * self.duration}s-{self.number * self.duration + self.duration}s packet len: {len(self.samples)}  sample rate:{self.sample_rate}'
 
 
 class LiveDemodulator:
@@ -92,8 +129,8 @@ class LiveDemodulator:
         wf.setframerate(self.RATE)
         wf.writeframes(b''.join(frames))
         wf.close()
+        self.data_packets.append(DataPacket(filepath, duration, self.saved_chunks))
         self.saved_chunks += 1
-        self.data_packets.append(DataPacket(filepath))
         print("file saved")
 
     @check_connection_status
@@ -137,11 +174,13 @@ if __name__ == "__main__":
             # print(device)
             # print('\n\n\n\n\n')
         live_demodulator.connect(devices[30])
-        for x in range(10):
-            live_demodulator.record(1)
+        for x in range(2):
+            live_demodulator.record(2)
         live_demodulator.combine()
 
         for packet in live_demodulator.data_packets:
-            packet.spectrogram()
+            packet.spectrogram_chart(save=True, show=True)
+            image = packet.spectrogram_image(save=True)
+            print(packet)
         live_demodulator.end_stream()
     print('end')
