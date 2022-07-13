@@ -6,5 +6,16 @@
 
 {% block content %}
 <button onclick="window.location='/';" class="back_button">⮢</button>
-<p>not implemented yet</p>
+
+<div class="box">
+    <p style="visibility: hidden" id="file_info_datestamp">none</p>
+
+    <label for="audio_devices_select">Choose audio device:</label>
+    <select name="audio_devices_select" id="audio_devices_select">
+    </select>
+
+</div>
+
+<script src="static/js/get_audio_devices.js"></script>
+
 {% endblock %}

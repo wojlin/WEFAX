@@ -1,0 +1,25 @@
+
+.box
+{
+    position: absolute;
+    top: 50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+
+
+    background: rgba(54, 54, 54, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2.4px);
+    -webkit-backdrop-filter: blur(2.4px);
+    border: 1px solid rgba(54, 54, 54, 0.41);
+
+    width: 70vh;
+    height: 70vh;
+    font-family: Arial;
+
+    animation: slide_in 1s;
+    animation-fill-mode:forwards;
+    z-index:100;
+
+}

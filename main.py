@@ -5,6 +5,7 @@ from flask import Flask, send_from_directory, render_template, request, send_fil
 from werkzeug.utils import secure_filename
 import shutil
 import time
+import pyaudio
 from flask_socketio import SocketIO
 
 from flask_socketio import emit
@@ -119,37 +120,32 @@ def get_gallery_files():
     return gallery_files
 
 
-@app.route('/get_sound_devices', methods=['POST'])
-def delete_entry():
-    r = request.form
-    datestamp = r['datestamp']
-    demodulator = demodulators[datestamp]
-    return demodulator.get_devices()
-
-
 @app.route('/file_converter')
 def file_converter():
     return render_template('file_converter.html')
 
 
+@app.route('/get_audio_devices')
+def get_audio_devices():
+    p = pyaudio.PyAudio()
+    return {i: p.get_device_info_by_index(i) for i in range(p.get_device_count())}
+
+
 @app.route('/live_converter')
 def live_converter():
-
     try:
-        r = request.form
         dir_name = str(round(time.time() * 1000))
         save_directory = f"static/temp/{dir_name}"
         os.mkdir(save_directory)
 
-        demodulator = LiveDemodulator(path=save_directory)
+        live_demodulator = LiveDemodulator(path=save_directory)
 
-        ret = demodulator.file_info()
-        ret['datestamp'] = dir_name
-        demodulators[dir_name] = demodulator
+        demodulators[dir_name] = live_demodulator
 
         print('############')
-        print(f"filename: {secure_filename(request.files['file'].filename)}")
+        print(f"live demodulator {dir_name}")
         print('############')
+
         return render_template('live_converter.html')
     except Exception as e:
         print(e)
