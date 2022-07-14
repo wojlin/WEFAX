@@ -21,9 +21,29 @@ function get_audio_devices()
                 audio_devices_select.appendChild(option);
             }
 
+            change_audio_device(document.getElementById("audio_devices_select"));
+
         }
     }
     xmlHttp.open("GET", '/get_audio_devices', true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+function change_audio_device(element)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            var text = xmlHttp.responseText;
+            console.log(text);
+
+        }
+    }
+    var val = element.value;
+
+    xmlHttp.open("GET", '/change_audio_device/'+val.toString(), true); // true for asynchronous
     xmlHttp.send(null);
 }
 

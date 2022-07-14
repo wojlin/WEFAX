@@ -131,26 +131,15 @@ def get_audio_devices():
     return {i: p.get_device_info_by_index(i) for i in range(p.get_device_count())}
 
 
+@app.route('/change_audio_device/<device_index>')
+def change_audio_device(device_index):
+    global live_demodulator
+    return live_demodulator.connect(int(device_index))
+
+
 @app.route('/live_converter')
 def live_converter():
-    try:
-        dir_name = str(round(time.time() * 1000))
-        save_directory = f"static/temp/{dir_name}"
-        os.mkdir(save_directory)
-
-        live_demodulator = LiveDemodulator(path=save_directory)
-
-        demodulators[dir_name] = live_demodulator
-
-        print('############')
-        print(f"live demodulator {dir_name}")
-        print('############')
-
-        return render_template('live_converter.html')
-    except Exception as e:
-        print(e)
-        return e
-
+    return render_template('live_converter.html')
 
 
 
@@ -162,7 +151,6 @@ def gallery():
 @app.route('/')
 def index():
     return render_template('index.html')
-
 
 
 @app.route('/convert_file', methods=['POST'])
@@ -220,4 +208,11 @@ if __name__ == "__main__":
     except Exception:
         pass
     os.mkdir('static/temp')
+
+    dir_name = str(round(time.time() * 1000))
+    save_directory = f"static/temp/{dir_name}"
+    os.mkdir(save_directory)
+
+    live_demodulator = LiveDemodulator(path=save_directory)
+
     socketio.run(app, host="localhost", port=2137, debug=True)

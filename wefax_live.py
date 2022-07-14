@@ -94,9 +94,13 @@ class LiveDemodulator:
     def get_devices(self):
         return [self.p.get_device_info_by_index(i) for i in range(self.p.get_device_count())]
 
-    def connect(self, device: dict):
+    def connect(self, device_index: int):
+        device = self.p.get_device_info_by_index(device_index)
         print(f"connecting to {device['name']} on channel {device['index']}")
         try:
+            if self.connected:
+                self.stream.stop_stream()
+                self.stream.close()
 
             self.stream = self.p.open(format=self.FORMAT,
                                       channels=self.CHANNELS,
@@ -173,7 +177,7 @@ if __name__ == "__main__":
             print(device['index'], device['name'])
             # print(device)
             # print('\n\n\n\n\n')
-        live_demodulator.connect(devices[30])
+        live_demodulator.connect(30)
         for x in range(2):
             live_demodulator.record(2)
         live_demodulator.combine()
