@@ -82,13 +82,17 @@ class LiveDemodulator:
 
         self.data_packets = []
 
+        self.isRecording = False
+
+        self.threads = []
+
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
             if self.connected:
                 return func(self, *args, **kwargs)
             else:
                 print("sound device not connected. choose device before calling other methods")
-                return None
+                return "sound device not connected. choose device before calling other methods"
 
         return wrapper
 
@@ -112,6 +116,11 @@ class LiveDemodulator:
                                       frames_per_buffer=self.CHUNK)
             print('connected!')
             self.connected = True
+            for thread in self.threads:
+                thread.join()
+            thread = threading.Thread(target=self.record_process, args=())
+            self.threads.append(thread)
+            thread.start()
             return "success"
         except Exception as e:
             print(e)
@@ -119,13 +128,26 @@ class LiveDemodulator:
 
     def record_process(self):
         while True:
-            self.record(1)
+            if self.connected and self.isRecording:
+                packet = self.record(1)
+                packet.spectrogram_image(save=True)
 
+    @check_connection_status
     def start_recording(self):
+        self.isRecording = True
         print("recording started")
+        return "recording started"
 
+    @check_connection_status
     def stop_recording(self):
-        print("recording stopped")
+        if self.isRecording:
+            self.isRecording = False
+            self.combine()
+            print("recording stopped")
+            return "recording stopped"
+        else:
+            print("recording need to be started in order to stop it")
+            return "recording need to be started in order to stop it"
 
     @check_connection_status
     def record(self, duration):
@@ -147,6 +169,7 @@ class LiveDemodulator:
         self.data_packets.append(DataPacket(filepath, duration, self.saved_chunks))
         self.saved_chunks += 1
         print("file saved")
+        return DataPacket(filepath, duration, self.saved_chunks)
 
     @check_connection_status
     def combine(self):

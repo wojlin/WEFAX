@@ -134,21 +134,13 @@ def get_audio_devices():
 @app.route('/audio_device_start_recording')
 def audio_device_start_recording():
     global live_demodulator
-    try:
-        live_demodulator.start_recording()
-        return "success"
-    except Exception as e:
-        return str(e)
+    return live_demodulator.start_recording()
 
 
 @app.route('/audio_device_stop_recording')
 def audio_device_stop_recording():
     global live_demodulator
-    try:
-        live_demodulator.stop_recording()
-        return "success"
-    except Exception as e:
-        return str(e)
+    return live_demodulator.stop_recording()
 
 
 @app.route('/change_audio_device/<device_index>')
@@ -230,7 +222,7 @@ if __name__ == "__main__":
     os.mkdir('static/temp')
 
     dir_name = str(round(time.time() * 1000))
-    save_directory = f"static/temp/{dir_name}"
+    save_directory = f"static/temp/{dir_name}/"
     os.mkdir(save_directory)
 
     live_demodulator = LiveDemodulator(path=save_directory)

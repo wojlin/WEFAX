@@ -48,13 +48,48 @@ function change_audio_device(element)
 }
 
 
+function manage_record_button()
+{
+    var playButton = document.getElementById('record_control');
+    var record = false;
+    playButton.addEventListener('click', e => {
+      e.preventDefault();
+      record = !record;
+      if(record == true)
+      {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function()
+            {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                {
+                    var text = xmlHttp.responseText;
+                    console.log(text);
 
-var playButton = document.getElementById('record_control');
+                }
+            }
 
-playButton.addEventListener('click', e => {
-  e.preventDefault();
-  playButton.classList.toggle('is--playing');
-});
+            xmlHttp.open("GET", '/audio_device_start_recording', true); // true for asynchronous
+            xmlHttp.send(null);
+      }
+      else
+      {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function()
+            {
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                {
+                    var text = xmlHttp.responseText;
+                    console.log(text);
 
+                }
+            }
 
+            xmlHttp.open("GET", '/audio_device_stop_recording', true); // true for asynchronous
+            xmlHttp.send(null);
+      }
+      playButton.classList.toggle('is--playing');
+    });
+}
+
+manage_record_button();
 get_audio_devices();
