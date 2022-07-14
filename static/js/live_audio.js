@@ -47,4 +47,14 @@ function change_audio_device(element)
     xmlHttp.send(null);
 }
 
+
+
+var playButton = document.getElementById('record_control');
+
+playButton.addEventListener('click', e => {
+  e.preventDefault();
+  playButton.classList.toggle('is--playing');
+});
+
+
 get_audio_devices();

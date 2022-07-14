@@ -7,13 +7,29 @@
 {% block content %}
 <button onclick="window.location='/';" class="back_button">⮢</button>
 
-<div class="box">
-    <p style="visibility: hidden" id="file_info_datestamp">none</p>
+<div id="audio_box" class="box">
+    <div class="audio_grid">
+        <div class="audio_setup border">
+            <div id="audio_setup_inline_left">
 
-    <label for="audio_devices_select">Choose audio device:</label>
-    <select onchange="change_audio_device(this);" name="audio_devices_select" id="audio_devices_select">
-    </select>
+                <label for="audio_devices_select">audio device:</label>
+                <select onchange="change_audio_device(this);" name="audio_devices_select" id="audio_devices_select">
+                </select>
 
+            </div>
+            <div id="audio_setup_inline_right">
+
+                <div id="record_control">
+                    <div class="border"></div>
+                    <div class="play"></div>
+                </div>
+
+            </div>
+        </div>
+        <div class="audio_spectrum border"></div>
+        <div class="audio_info border"></div>
+        <div class="audio_image border"></div>
+    </div>
 </div>
 
 <script src="static/js/live_audio.js"></script>

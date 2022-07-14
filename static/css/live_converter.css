@@ -1,5 +1,4 @@
-
-.box
+#audio_box
 {
     position: absolute;
     top: 50%;
@@ -14,12 +13,115 @@
     -webkit-backdrop-filter: blur(2.4px);
     border: 1px solid rgba(54, 54, 54, 0.41);
 
-    width: 70vh;
+    width: 110vh;
     height: 70vh;
     font-family: Arial;
 
     animation: slide_in 1s;
     animation-fill-mode:forwards;
     z-index:100;
+}
 
+
+.audio_grid {
+  display: grid;
+  grid-auto-rows: 1fr;
+  grid-template-columns: 0.4fr 2fr 0.6fr;
+  grid-template-rows: 0.4fr 1.6fr 1fr;
+  gap: 0px 0px;
+  grid-template-areas:
+    "audio_setup audio_setup audio_spectrum"
+    "audio_info audio_image audio_spectrum"
+    "audio_info audio_image audio_spectrum";
+  height:100%;
+  width:100%;
+}
+.audio_setup { grid-area: audio_setup; display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.audio_spectrum { grid-area: audio_spectrum; }
+.audio_info { grid-area: audio_info; }
+.audio_image { grid-area: audio_image; }
+
+.border
+{
+    border:solid 1px white;
+}
+
+#audio_setup_inline_left
+{
+    display:inline-block;
+    width:70%;
+    float:left;
+}
+
+#audio_setup_inline_right
+{
+    display:inline-block;
+    width:5vh;
+    float:right;
+}
+
+#record_control {
+  width: 5vh;
+  height: 5vh;
+  cursor: pointer;
+  position:relative;
+}
+#record_control .border {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #4ea62b;
+  border-radius: 5vh;
+}
+#record_control.is--playing .border {
+  border-top: none;
+  border-bottom: none;
+  -webkit-animation: spin 1.5s ease-in-out infinite;
+          animation: spin 1.5s ease-in-out infinite;
+  border-color: transparent #ba2323 transparent #ba2323;
+}
+#record_control .play {
+  position: absolute;
+  top: 1.5vh;
+  left: 2.1vh;
+  box-sizing: border-box;
+  height: 2vh;
+  width: 2vh;
+  border-color: transparent transparent transparent #4ea62b;
+  transition: 100ms all ease;
+  will-change: border-width;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 1vh 0 1vh 1.5vh;
+}
+#record_control.is--playing .play {
+  border-style: double;
+  border-width: 0px 0 0px 1.5vh;
+  transform: translate(-0.2vh, 0.1vh);
+  border-color: transparent transparent transparent #ba2323;
+}
+
+
+@-webkit-keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#audio_devices_select
+{
+    width:50%;
 }

@@ -131,6 +131,26 @@ def get_audio_devices():
     return {i: p.get_device_info_by_index(i) for i in range(p.get_device_count())}
 
 
+@app.route('/audio_device_start_recording')
+def audio_device_start_recording():
+    global live_demodulator
+    try:
+        live_demodulator.start_recording()
+        return "success"
+    except Exception as e:
+        return str(e)
+
+
+@app.route('/audio_device_stop_recording')
+def audio_device_stop_recording():
+    global live_demodulator
+    try:
+        live_demodulator.stop_recording()
+        return "success"
+    except Exception as e:
+        return str(e)
+
+
 @app.route('/change_audio_device/<device_index>')
 def change_audio_device(device_index):
     global live_demodulator

@@ -10,6 +10,7 @@ import io
 from scipy.io.wavfile import read, write
 from matplotlib.ticker import FormatStrFormatter
 import numpy as np
+import threading
 
 from PIL import Image
 from matplotlib import cm
@@ -115,6 +116,16 @@ class LiveDemodulator:
         except Exception as e:
             print(e)
             return str(e)
+
+    def record_process(self):
+        while True:
+            self.record(1)
+
+    def start_recording(self):
+        print("recording started")
+
+    def stop_recording(self):
+        print("recording stopped")
 
     @check_connection_status
     def record(self, duration):
