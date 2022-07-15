@@ -94,6 +94,12 @@ function manage_record_button()
 
 function manage_live_spectrum()
 {
+    var channel = document.getElementById("audio_spectrum");
+    var channel_height = channel.clientHeight;
+    var channel_width = channel.clientWidth;
+    console.log(channel_width);
+    console.log(channel_height);
+
     var socket = io();
 
      socket.addEventListener('message', function (event)
@@ -109,6 +115,11 @@ function manage_live_spectrum()
     socket.on('image_upload', function(data)
     {
         console.log(data);
+        var image = document.createElement('img');
+        image.style.display = 'block';
+        image.src = data['src'];
+        image.style.width = channel_width + 'px';
+        channel.insertBefore(image, channel.firstChild);
     });
 
 }

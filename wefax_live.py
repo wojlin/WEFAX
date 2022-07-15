@@ -56,6 +56,7 @@ class DataPacket:
 
         img = Image.fromarray((cm.gist_earth(spectrogram_normalized) * 255).astype(np.uint8))
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        img = img.transpose(Image.ROTATE_90)
 
         if save:
             img.save(self.spectrum_filepath)
@@ -135,9 +136,13 @@ class LiveDemodulator:
         while True:
             if self.connected and self.isRecording:
                 packet = self.record(1)
-                packet.spectrogram_image(save=True)
+                img = packet.spectrogram_image(save=True)
                 if self.stream:
-                    self.images_websocket_stack.append(packet.spectrum_filepath)
+                    json_message = {"width": int(img.width),
+                                    "height": int(img.height),
+                                    "src": str(packet.spectrum_filepath),
+                                    "length": float(packet.duration)}
+                    self.images_websocket_stack.append(json_message)
 
     @check_connection_status
     def start_recording(self):

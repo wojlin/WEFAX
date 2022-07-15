@@ -40,7 +40,10 @@
   justify-content: center;
   align-items: center;
 }
-.audio_spectrum { grid-area: audio_spectrum; }
+.audio_spectrum
+{ grid-area: audio_spectrum;
+    overflow:hidden;
+}
 .audio_info { grid-area: audio_info; }
 .audio_image { grid-area: audio_image; }
 
