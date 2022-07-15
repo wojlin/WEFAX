@@ -91,5 +91,28 @@ function manage_record_button()
     });
 }
 
+
+function manage_live_spectrum()
+{
+    var socket = io();
+
+     socket.addEventListener('message', function (event)
+     {
+        console.log('Message from server ', event.data);
+    });
+
+    socket.on('connect', function()
+    {
+        socket.emit('get_images');
+    });
+
+    socket.on('image_upload', function(data)
+    {
+        console.log(data);
+    });
+
+}
+
+manage_live_spectrum();
 manage_record_button();
 get_audio_devices();

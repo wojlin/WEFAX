@@ -23,6 +23,8 @@ class DataPacket:
         self.filepath = filepath
         self.directory = '/'.join(str(self.filepath).split('/')[:-1]) + '/'
         self.sample_rate, self.samples = wavfile.read(self.filepath)
+        self.chart_filepath = f'{self.directory}{self.number}_chart.png'
+        self.spectrum_filepath = f'{self.directory}{self.number}_image.png'
 
     def spectrogram_chart(self, save: bool = True, show: bool = False):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
@@ -42,7 +44,7 @@ class DataPacket:
         plt.title(f'{self.filepath}')
 
         if save:
-            plt.savefig(f'{self.directory}{self.number}_chart.png')
+            plt.savefig(self.chart_filepath)
         if show:
             plt.show()
 
@@ -56,7 +58,7 @@ class DataPacket:
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
 
         if save:
-            img.save(f'{self.directory}{self.number}_image.png')
+            img.save(self.spectrum_filepath)
 
         return img
 
@@ -65,7 +67,7 @@ class DataPacket:
 
 
 class LiveDemodulator:
-    def __init__(self, path: str):
+    def __init__(self, path: str, tcp_stream: bool = True):
         self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
@@ -77,7 +79,6 @@ class LiveDemodulator:
 
         self.p = pyaudio.PyAudio()
 
-        self.stream = None
         self.connected = False
 
         self.data_packets = []
@@ -85,6 +86,10 @@ class LiveDemodulator:
         self.isRecording = False
 
         self.threads = []
+
+        self.images_websocket_stack = []
+
+        self.stream = tcp_stream
 
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
@@ -131,6 +136,8 @@ class LiveDemodulator:
             if self.connected and self.isRecording:
                 packet = self.record(1)
                 packet.spectrogram_image(save=True)
+                if self.stream:
+                    self.images_websocket_stack.append(packet.spectrum_filepath)
 
     @check_connection_status
     def start_recording(self):

@@ -43,7 +43,7 @@ def delete_directory(path: str, datestamp: str):
 
 
 @socketio.on('get_progress')
-def handle_my_custom_event(json):
+def get_progress(json):
     try:
         print('received json: ' + str(json))
         demodulator = demodulators[json['data']]
@@ -61,6 +61,19 @@ def handle_my_custom_event(json):
                                         args=(f"static/temp/{json['data']}", json['data'],)).start()
                         notConverted = False
                 demodulator.websocket_stack.pop(0)
+    except Exception as e:
+        print(e)
+
+
+@socketio.on('get_images')
+def get_images():
+    global live_demodulator
+    try:
+        notConverted = True
+        while notConverted:
+            if len(live_demodulator.images_websocket_stack) > 0:
+                emit('image_upload', live_demodulator.images_websocket_stack[0])
+                live_demodulator.images_websocket_stack.pop(0)
     except Exception as e:
         print(e)
 
@@ -225,6 +238,6 @@ if __name__ == "__main__":
     save_directory = f"static/temp/{dir_name}/"
     os.mkdir(save_directory)
 
-    live_demodulator = LiveDemodulator(path=save_directory)
+    live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
 
     socketio.run(app, host="localhost", port=2137, debug=True)
