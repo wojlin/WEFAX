@@ -80,6 +80,7 @@ function manage_record_button()
                 {
                     var text = xmlHttp.responseText;
                     console.log(text);
+                    get_combined_audio_file();
 
                 }
             }
@@ -91,6 +92,24 @@ function manage_record_button()
     });
 }
 
+function get_combined_audio_file()
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            var text = xmlHttp.responseText;
+            console.log(text);
+            var output_audio = document.getElementById("output_audio");
+            output_audio.src = text;
+
+        }
+    }
+
+    xmlHttp.open("GET", '/get_combined_audio_file', true); // true for asynchronous
+    xmlHttp.send(null);
+}
 
 function manage_live_spectrum()
 {
@@ -107,8 +126,7 @@ function manage_live_spectrum()
     var channel_height = channel.clientHeight;
     var channel_width = channel.clientWidth;
 
-    console.log(channel_width);
-    console.log(channel_height);
+    channel.style.bottom = window_height + 'px';
 
     var socket = io();
 

@@ -30,13 +30,59 @@
             <div style="bottom:0px;" id="audio_spectrum"></div>
             <div id="audio_spectrum_info">
                 <p id="freq_min">0 Hz</p>
-                <p id="freq_max">5000 Hz</p>
+                <p id="freq_max">5500 Hz</p>
                 <p id="time_min">0 s</p>
                 <p id="time_max">x s</p>
             </div>
         </div>
 
-        <div class="audio_info border"></div>
+        <div class="audio_info border">
+            <p class="audio_info_text">audio info:</p>
+            <table class="table">
+                <tr class="space">
+                    <th>record length</th>
+                    <td>:</td>
+                    <td id="info_table_record_length">0s</td>
+                </tr>
+                <tr class="space">
+                    <th>packets buffered</th>
+                    <td>:</td>
+                    <td id="info_table_packets_buffered">0</td>
+                </tr>
+            </table>
+            <hr>
+            <p class="audio_info_text">decoding status:</p>
+             <table class="table">
+                <tr class="space">
+                    <th>start tone</th>
+                    <td>:</td>
+                    <td id="info_table_start_tone"><span style="color:red;">not found</span></td>
+                </tr>
+                <tr class="space">
+                    <th>phasing signal</th>
+                    <td>:</td>
+                    <td id="info_table_phasing_signal"><span style="color:red;">not found</span></td>
+                </tr>
+                <tr class="space">
+                    <th>image</th>
+                    <td>:</td>
+                    <td id="info_table_image"><span style="color:red;">not started</span></td>
+                </tr>
+                <tr class="space">
+                    <th>stop tone</th>
+                    <td>:</td>
+                    <td id="info_table_stop_tone"><span style="color:red;">not found</span></td>
+                </tr>
+                <tr class="space">
+                    <th>black</th>
+                    <td>:</td>
+                    <td id="info_table_black"><span style="color:red;">not found</span></td>
+                </tr>
+            </table>
+            <hr>
+            <p class="audio_info_text">audio output:</p>
+            <audio id="output_audio" src="" controls></audio>
+        </div>
         <div class="audio_image border"></div>
     </div>
 </div>

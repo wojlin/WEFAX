@@ -156,6 +156,12 @@ def audio_device_stop_recording():
     return live_demodulator.stop_recording()
 
 
+@app.route('/get_combined_audio_file')
+def get_combined_audio_file():
+    global live_demodulator
+    return live_demodulator.combine()
+
+
 @app.route('/change_audio_device/<device_index>')
 def change_audio_device(device_index):
     global live_demodulator

@@ -13,20 +13,22 @@
     -webkit-backdrop-filter: blur(2.4px);
     border: 1px solid rgba(54, 54, 54, 0.41);
 
-    width: 110vh;
+    width: 120vh;
     height: 70vh;
     font-family: Arial;
 
     animation: slide_in 1s;
     animation-fill-mode:forwards;
     z-index:100;
+    padding:1vh;
 }
+
 
 
 .audio_grid {
   display: grid;
   grid-auto-rows: 1fr;
-  grid-template-columns: 0.4fr 2fr 0.6fr;
+  grid-template-columns: 0.7fr 2fr 0.7fr;
   grid-template-rows: 0.4fr 1.6fr 1fr;
   gap: 0px 0px;
   grid-template-areas:
@@ -35,6 +37,7 @@
     "audio_info audio_image audio_spectrum";
   height:100%;
   width:100%;
+  gap:1vh;
 }
 .audio_setup { grid-area: audio_setup; display: flex;
   justify-content: center;
@@ -46,7 +49,12 @@ position:relative;
 overflow:hidden;
 
 }
-.audio_info { grid-area: audio_info; }
+.audio_info
+ {
+ grid-area: audio_info;
+  font-size:1.5vh;
+  color:white;
+  }
 .audio_image { grid-area: audio_image; }
 
 #audio_spectrum
@@ -58,7 +66,6 @@ overflow:hidden;
      transition: all 1s linear;
      transition-duration: 1s;
      bottom:0px;
-
 }
 
 #audio_spectrum_info
@@ -72,6 +79,27 @@ overflow:hidden;
 
 }
 
+.table
+{
+
+    margin:auto;
+    margin-top:1vh;
+    width:80%;
+    font-size: 1.5vh;
+    text-align: left;
+    border-collapse:separate;
+  border-spacing: 0 2vh;
+}
+
+.audio_info_text
+{
+    width:80%;
+    margin:auto;
+    margin-top:1vh;
+    font-size:1.7vh;
+    font-weight:bold;
+    color: rgba(255,255,255,0.8);
+}
 #audio_spectrum_info > p
 {
     font-size: 10px;
@@ -105,9 +133,9 @@ overflow:hidden;
     bottom:0;
 }
 
-.border
-{
-    border:solid 1px white;
+.border {
+	background: rgb(13, 13, 13);
+	border-radius: 7px;
 }
 
 #audio_setup_inline_left

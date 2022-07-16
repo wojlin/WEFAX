@@ -15,6 +15,8 @@ import threading
 from PIL import Image
 from matplotlib import cm
 
+import scipy
+
 
 class DataPacket:
     def __init__(self, filepath, duration, number):
@@ -49,10 +51,9 @@ class DataPacket:
             plt.show()
 
     def spectrogram_image(self, save: bool = True):
-        frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
+        frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate, mode="magnitude")
 
-        spectrogram_normalized = (spectrogram - np.min(spectrogram)) / (np.max(spectrogram) - np.min(spectrogram))
-        print(np.max(spectrogram_normalized))
+        spectrogram_normalized = spectrogram / ((np.max(spectrogram)) + 0.0001)
 
         img = Image.fromarray((cm.gist_earth(spectrogram_normalized) * 255).astype(np.uint8))
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
@@ -63,6 +64,21 @@ class DataPacket:
             img.save(self.spectrum_filepath)
 
         return img
+
+    def __demodulate(self):
+        hilbert_signal = scipy.signal.hilbert(self.samples)
+        filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
+        return filtered_signal
+
+    def __digitalize(self):
+        plow = 0.5
+        phigh = 99.5
+        (low, high) = np.percentile(self.samples, (plow, phigh))
+        delta = high - low
+        digitalized = np.round(255 * (self.samples - low) / delta)
+        digitalized[digitalized < 0] = 0
+        digitalized[digitalized > 255] = 255
+        return [int(point) for point in digitalized]
 
     def __repr__(self):
         return f'part: {self.number * self.duration}s-{self.number * self.duration + self.duration}s packet len: {len(self.samples)}  sample rate:{self.sample_rate}'
@@ -155,7 +171,6 @@ class LiveDemodulator:
     def stop_recording(self):
         if self.isRecording:
             self.isRecording = False
-            self.combine()
             print("recording stopped")
             return "recording stopped"
         else:
@@ -200,6 +215,7 @@ class LiveDemodulator:
         for i in range(len(data)):
             output.writeframes(data[i][1])
         output.close()
+        return outfile
 
     def end_stream(self):
         if self.connected:
