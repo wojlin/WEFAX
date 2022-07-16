@@ -95,8 +95,18 @@ function manage_record_button()
 function manage_live_spectrum()
 {
     var channel = document.getElementById("audio_spectrum");
+
+    var freq_min = document.getElementById('freq_min');
+    var freq_max = document.getElementById('freq_max');
+    var time_min = document.getElementById('time_min');
+    var time_max = document.getElementById('time_max');
+
+    var spectrum_window = document.getElementById("spectrum_window");
+    var window_height = spectrum_window.clientHeight;
+
     var channel_height = channel.clientHeight;
     var channel_width = channel.clientWidth;
+
     console.log(channel_width);
     console.log(channel_height);
 
@@ -116,10 +126,21 @@ function manage_live_spectrum()
     {
         console.log(data);
         var image = document.createElement('img');
+         var channel_height = channel.clientHeight;
+    var channel_width = channel.clientWidth;
+        var segment_duration = data['length'];
+        var segment_height = data['height'];
+        var time_max_var = '-' + (window_height  * segment_duration / segment_height).toFixed(1).toString() + 's';
+        time_max.innerHTML = time_max_var;
         image.style.display = 'block';
         image.src = data['src'];
         image.style.width = channel_width + 'px';
         channel.insertBefore(image, channel.firstChild);
+        spectrum_bottom = parseInt(channel.style.bottom, 10);
+        console.log(window_height)
+        console.log(channel_height)
+        channel.style.bottom = -channel_height + window_height + 'px';
+
     });
 
 }

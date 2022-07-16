@@ -164,6 +164,11 @@ def change_audio_device(device_index):
 
 @app.route('/live_converter')
 def live_converter():
+    global live_demodulator
+    if live_demodulator is not None:
+        live_demodulator.stop_recording()
+        live_demodulator.end_stream()
+    live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
     return render_template('live_converter.html')
 
 

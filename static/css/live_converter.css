@@ -42,10 +42,68 @@
 }
 .audio_spectrum
 { grid-area: audio_spectrum;
-    overflow:hidden;
+position:relative;
+overflow:hidden;
+
 }
 .audio_info { grid-area: audio_info; }
 .audio_image { grid-area: audio_image; }
+
+#audio_spectrum
+{
+     overflow:hidden;
+     width:100%;
+     position:absolute;
+
+     transition: all 1s linear;
+     transition-duration: 1s;
+     bottom:0px;
+
+}
+
+#audio_spectrum_info
+{
+     overflow:hidden;
+     top:0;
+     bottom:0;
+     left:0;
+     right:0;
+     position:absolute;
+
+}
+
+#audio_spectrum_info > p
+{
+    font-size: 10px;
+    color: white;
+    position:absolute;
+    padding:0;
+    margin:0;
+}
+
+#freq_min
+{
+    left:0;
+    top:0;
+}
+
+#freq_max
+{
+    right:0;
+    top:0;
+}
+
+#time_min
+{
+    left:0;
+    top:1vh;
+}
+
+#time_max
+{
+    left:0;
+    bottom:0;
+}
 
 .border
 {

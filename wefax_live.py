@@ -57,6 +57,7 @@ class DataPacket:
         img = Image.fromarray((cm.gist_earth(spectrogram_normalized) * 255).astype(np.uint8))
         img = img.transpose(Image.FLIP_TOP_BOTTOM)
         img = img.transpose(Image.ROTATE_90)
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
 
         if save:
             img.save(self.spectrum_filepath)
