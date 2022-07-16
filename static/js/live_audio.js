@@ -102,8 +102,11 @@ function get_combined_audio_file()
             var text = xmlHttp.responseText;
             console.log(text);
             var output_audio = document.getElementById("output_audio");
+            var output_audio_button = document.getElementById("audio_download_button");
             output_audio.src = text;
-
+            audio_download_button.href = text;
+            var audio_not_saved = document.getElementById("audio_not_saved");
+            audio_not_saved.style.display = 'none';
         }
     }
 
@@ -162,6 +165,81 @@ function manage_live_spectrum()
     });
 
 }
+
+function manage_audio_info()
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            var text = JSON.parse(xmlHttp.responseText);
+            console.log(text);
+            var info_table_record_length = document.getElementById("info_table_record_length");
+            var info_table_packets_buffered = document.getElementById("info_table_packets_buffered");
+            var info_table_start_tone = document.getElementById("info_table_start_tone");
+            var info_table_phasing_signal = document.getElementById("info_table_phasing_signal");
+            var info_table_image = document.getElementById("info_table_image");
+            var info_table_stop_tone = document.getElementById("info_table_stop_tone");
+            var info_table_black = document.getElementById("info_table_black");
+
+            info_table_record_length.innerHTML = text["audio_length"].toString() + 's';
+            info_table_packets_buffered.innerHTML = text["data_packets"].toString();
+            if(text["start_tone_found"] == false)
+            {
+                info_table_start_tone.innerHTML = "<span style='color:red'>not found</span>";
+            }else
+            {
+                info_table_start_tone.innerHTML = "<span style='color:green'>found</span>";
+            }
+
+            if(text["phasing_signal_found"] == false)
+            {
+                info_table_phasing_signal.innerHTML = "<span style='color:red'>not found</span>";
+            }else
+            {
+                info_table_phasing_signal.innerHTML = "<span style='color:green'>found</span>";
+            }
+
+            if(text["image_process"] == "not started")
+            {
+                info_table_image.innerHTML = "<span style='color:red'>"+text["image_process"]+"</span>";
+            }else
+            {
+                info_table_image.innerHTML = "<span style='color:white'>"+text["image_process"]+"</span>";
+            }
+
+            if(text["stop_tone_found"] == false)
+            {
+                info_table_stop_tone.innerHTML = "<span style='color:red'>not found</span>";
+            }else
+            {
+                info_table_stop_tone.innerHTML = "<span style='color:green'>found</span>";
+            }
+
+            if(text["black_found"] == false)
+            {
+                info_table_black.innerHTML = "<span style='color:red'>not found</span>";
+            }else
+            {
+                info_table_black.innerHTML = "<span style='color:green'>found</span>";
+            }
+
+
+        }
+    }
+
+    xmlHttp.open("GET", '/get_audio_info', true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+function audio_info_interval(){
+    manage_audio_info();
+
+    setTimeout(audio_info_interval, 1000);
+}
+
+audio_info_interval();
 
 manage_live_spectrum();
 manage_record_button();

@@ -109,6 +109,14 @@ class LiveDemodulator:
 
         self.stream = tcp_stream
 
+        # ---- audio info ---- #
+        self.start_tone_found = False
+        self.phasing_signal_found = False
+        self.image_process = "not started"
+        self.stop_tone_found = False
+        self.black_found = False
+        # -------------------- #
+
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
             if self.connected:
@@ -222,6 +230,17 @@ class LiveDemodulator:
             self.stream.stop_stream()
             self.stream.close()
         self.p.terminate()
+
+    def audio_info(self):
+        audio_length = sum([data_packet.duration for data_packet in self.data_packets])
+        return {"data_packets": len(self.data_packets),
+                "audio_length": audio_length,
+                "start_tone_found": self.start_tone_found,
+                "phasing_signal_found": self.phasing_signal_found,
+                "image_process": self.image_process,
+                "stop_tone_found": self.stop_tone_found,
+                "black_found": self.black_found
+                }
 
     def __enter__(self):
         return self

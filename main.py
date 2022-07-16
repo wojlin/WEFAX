@@ -162,6 +162,12 @@ def get_combined_audio_file():
     return live_demodulator.combine()
 
 
+@app.route('/get_audio_info')
+def get_audio_info():
+    global live_demodulator
+    return live_demodulator.audio_info()
+
+
 @app.route('/change_audio_device/<device_index>')
 def change_audio_device(device_index):
     global live_demodulator

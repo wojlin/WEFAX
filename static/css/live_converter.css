@@ -54,6 +54,7 @@ overflow:hidden;
  grid-area: audio_info;
   font-size:1.5vh;
   color:white;
+  display:table;
   }
 .audio_image { grid-area: audio_image; }
 
@@ -213,4 +214,53 @@ overflow:hidden;
 #audio_devices_select
 {
     width:50%;
+}
+
+#audio_output_panel
+{
+
+    display:table-row;
+    height:100%;
+    margin:1vh;
+    border-spacing: 0 1em;
+    position:relative;
+}
+#audio_output_panel_inner
+{
+    margin:1vh;
+    position:absolute;
+    top:0vh;
+    left:0;
+    bottom:0;
+    right:0;
+
+}
+
+#output_audio
+{
+    display:block;
+    margin:auto;
+    margin-top:3vh;
+    width:80%;
+
+}
+
+#audio_not_saved
+{
+    position:absolute;
+    left:0;
+    right:0;
+    top:0vh;
+    bottom:0;
+    background: rgba(21, 21, 21, 0.9);
+    border-radius:1vh;
+
+}
+
+#audio_download_button
+{
+    margin:auto;
+    margin-top:1vh;
+    padding:0.5vh;
+    display:block;
 }
