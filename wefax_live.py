@@ -17,6 +17,9 @@ from matplotlib import cm
 
 import scipy
 
+import math
+import scipy.fftpack
+
 
 class DataPacket:
     def __init__(self, filepath, duration, number):
@@ -25,6 +28,7 @@ class DataPacket:
         self.filepath = filepath
         self.directory = '/'.join(str(self.filepath).split('/')[:-1]) + '/'
         self.sample_rate, self.samples = wavfile.read(self.filepath)
+        self.fft_filepath = f'{self.directory}{self.number}_fft.png'
         self.chart_filepath = f'{self.directory}{self.number}_chart.png'
         self.spectrum_filepath = f'{self.directory}{self.number}_image.png'
 
@@ -65,6 +69,47 @@ class DataPacket:
 
         return img
 
+    def find_sync_pulse(self, save: bool = True, show: bool = False):
+
+        fft = np.fft.fft(self.samples)
+
+        N = len(fft)
+        n = np.arange(N)
+        T = N / self.sample_rate
+        freq = n / T
+
+        n_oneside = N // 2
+        freqs_one_side = freq[:n_oneside]
+        amplitude_one_size = abs(fft[:n_oneside] / n_oneside)
+
+        normalized_amplitude = amplitude_one_size / max(amplitude_one_size)
+        peaks = scipy.signal.find_peaks(normalized_amplitude, distance=200, height=0.2)
+
+        if save or show:
+            plt.clf()
+
+            plt.plot(freqs_one_side, normalized_amplitude)
+            plt.plot(freqs_one_side[peaks[0]], peaks[1]['peak_heights'], "x")
+            if save:
+                plt.savefig(self.fft_filepath)
+            if show:
+                plt.show()
+
+        found_peaks = peaks[0]
+        print(found_peaks)
+
+        for peak in freqs_one_side[peaks[0]]:
+            if not 1000 < peak < 3000:
+                return False
+
+        if 4 <= len(found_peaks) <= 6:
+            return True
+        else:
+            return False
+
+
+
+
     def __demodulate(self):
         hilbert_signal = scipy.signal.hilbert(self.samples)
         filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
@@ -93,6 +138,8 @@ class LiveDemodulator:
 
         self.WAVE_OUTPUT_FILENAME = path
 
+        self.PACKET_DURATION = 1
+
         self.saved_chunks = 0
 
         self.p = pyaudio.PyAudio()
@@ -116,6 +163,11 @@ class LiveDemodulator:
         self.stop_tone_found = False
         self.black_found = False
         # -------------------- #
+
+
+        # ---- peak variables ----#
+        self.amount_peaks_found = 0
+
 
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
@@ -160,8 +212,17 @@ class LiveDemodulator:
     def record_process(self):
         while True:
             if self.connected and self.isRecording:
-                packet = self.record(1)
+                packet = self.record(self.PACKET_DURATION)
                 img = packet.spectrogram_image(save=True)
+                # packet.spectrogram_chart(save=True)
+                if not self.start_tone_found:
+                    if packet.find_sync_pulse(save=False, show=False):
+                        self.amount_peaks_found += 1
+                    else:
+                        self.amount_peaks_found = 0
+                    if self.amount_peaks_found * self.PACKET_DURATION >= 4:
+                        self.start_tone_found = True
+
                 if self.stream:
                     json_message = {"width": int(img.width),
                                     "height": int(img.height),
