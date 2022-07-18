@@ -30,7 +30,7 @@ class DataPacket:
         self.sample_rate, self.samples = wavfile.read(self.filepath)
         self.fft_filepath = f'{self.directory}{self.number}_fft.png'
         self.chart_filepath = f'{self.directory}{self.number}_chart.png'
-        self.spectrum_filepath = f'{self.directory}{self.number}_image.png'
+        self.spectrum_filepath = f'{self.directory}{self.number}_spectrum.png'
 
     def spectrogram_chart(self, save: bool = True, show: bool = False):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
@@ -107,20 +107,24 @@ class DataPacket:
         else:
             return False
 
+    def process(self):
+        filtered_signal = self.__demodulate(self.samples)
+        digitalized_signal = self.__digitalize(filtered_signal)
+        return digitalized_signal
 
-
-
-    def __demodulate(self):
-        hilbert_signal = scipy.signal.hilbert(self.samples)
+    @staticmethod
+    def __demodulate(data):
+        hilbert_signal = scipy.signal.hilbert(data)
         filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
         return filtered_signal
 
-    def __digitalize(self):
+    @staticmethod
+    def __digitalize(data):
         plow = 0.5
         phigh = 99.5
-        (low, high) = np.percentile(self.samples, (plow, phigh))
+        (low, high) = np.percentile(data, (plow, phigh))
         delta = high - low
-        digitalized = np.round(255 * (self.samples - low) / delta)
+        digitalized = np.round(255 * (data - low) / (delta+0.000001))
         digitalized[digitalized < 0] = 0
         digitalized[digitalized > 255] = 255
         return [int(point) for point in digitalized]
@@ -131,30 +135,18 @@ class DataPacket:
 
 class LiveDemodulator:
     def __init__(self, path: str, tcp_stream: bool = True):
+        # ---- constants  ---- #
         self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
         self.RATE = 11025
-
-        self.WAVE_OUTPUT_FILENAME = path
-
+        self.OUTPUT_DIRECTORY = path
         self.PACKET_DURATION = 1
-
-        self.saved_chunks = 0
-
-        self.p = pyaudio.PyAudio()
-
-        self.connected = False
-
-        self.data_packets = []
-
-        self.isRecording = False
-
-        self.threads = []
-
-        self.images_websocket_stack = []
-
-        self.stream = tcp_stream
+        self.LINES_PER_MINUTE = 120
+        self.TIME_FOR_ONE_FRAME = 1 / (self.LINES_PER_MINUTE / 60)  # in s
+        self.SAMPLES_FOR_ONE_FRAME = int(self.TIME_FOR_ONE_FRAME * self.RATE)
+        self.MINIMUM_FRAMES_PER_UPDATE = 10
+        # -------------------- #
 
         # ---- audio info ---- #
         self.start_tone_found = False
@@ -164,10 +156,21 @@ class LiveDemodulator:
         self.black_found = False
         # -------------------- #
 
-
-        # ---- peak variables ----#
+        # ---- variables ---- #
+        self.data_packets = []
+        self.data_points = []
+        self.threads = []
+        self.spectrum_websocket_stack = []
+        self.frames_websocket_stack = []
+        self.connected = False
+        self.isRecording = False
         self.amount_peaks_found = 0
+        self.saved_chunks = 0
+        self.saved_frames = 0
+        # -------------------- #
 
+        self.p = pyaudio.PyAudio()
+        self.stream = tcp_stream
 
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
@@ -201,13 +204,40 @@ class LiveDemodulator:
             self.connected = True
             for thread in self.threads:
                 thread.join()
-            thread = threading.Thread(target=self.record_process, args=())
-            self.threads.append(thread)
-            thread.start()
+            thread1 = threading.Thread(target=self.record_process, args=())
+            thread2 = threading.Thread(target=self.convert_process, args=())
+            self.threads.append(thread1)
+            self.threads.append(thread2)
+            thread1.start()
+            thread2.start()
             return "success"
         except Exception as e:
             print(e)
             return str(e)
+
+    def convert_process(self):
+        while True:
+            if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
+                frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
+
+                w, h = self.SAMPLES_FOR_ONE_FRAME, self.MINIMUM_FRAMES_PER_UPDATE
+                img = Image.new('L', (w, h), )
+                for y in range(h):
+                    for x in range(w):
+                        lum = 255 - frame_points[x*(y+1)]
+                        img.putpixel((x, y), lum)
+
+                img = img.resize((w, 4 * h))
+
+                min_frames = self.saved_frames*self.MINIMUM_FRAMES_PER_UPDATE
+                max_frames = (self.saved_frames+1)*self.MINIMUM_FRAMES_PER_UPDATE
+                frame_output_path = f'{self.OUTPUT_DIRECTORY}frame_{min_frames}-{max_frames}.png'
+                img.save(frame_output_path)
+                self.saved_frames += 1
+
+                self.data_points = self.data_points[self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:]
+
+                self.frames_websocket_stack.append(frame_output_path)
 
     def record_process(self):
         while True:
@@ -223,12 +253,14 @@ class LiveDemodulator:
                     if self.amount_peaks_found * self.PACKET_DURATION >= 4:
                         self.start_tone_found = True
 
+                self.data_points += packet.process()
+
                 if self.stream:
                     json_message = {"width": int(img.width),
                                     "height": int(img.height),
                                     "src": str(packet.spectrum_filepath),
                                     "length": float(packet.duration)}
-                    self.images_websocket_stack.append(json_message)
+                    self.spectrum_websocket_stack.append(json_message)
 
     @check_connection_status
     def start_recording(self):
@@ -256,7 +288,7 @@ class LiveDemodulator:
             frames.append(data)
 
         print("recording_end")
-        filepath = self.WAVE_OUTPUT_FILENAME + str(self.saved_chunks) + '.wav'
+        filepath = self.OUTPUT_DIRECTORY + str(self.saved_chunks) + '.wav'
         wf = wave.open(filepath, 'wb')
         wf.setnchannels(self.CHANNELS)
         wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
@@ -270,8 +302,8 @@ class LiveDemodulator:
 
     @check_connection_status
     def combine(self):
-        infiles = [f'{self.WAVE_OUTPUT_FILENAME}{i}.wav' for i in range(self.saved_chunks)]
-        outfile = self.WAVE_OUTPUT_FILENAME + "output.wav"
+        infiles = [f'{self.OUTPUT_DIRECTORY}{i}.wav' for i in range(self.saved_chunks)]
+        outfile = self.OUTPUT_DIRECTORY + "output.wav"
 
         data = []
         for infile in infiles:
