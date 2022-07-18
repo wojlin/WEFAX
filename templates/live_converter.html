@@ -17,14 +17,36 @@
                 </select>
 
             </div>
-            <div id="audio_setup_inline_right">
-
+            <div id="audio_setup_inline_center">
+                <p>record:</p>
                 <div id="record_control">
                     <div class="border"></div>
                     <div class="play"></div>
+
                 </div>
 
             </div>
+
+            <div id="audio_setup_inline_right">
+
+                <div class="memory">
+                    <table class="table_memory">
+                        <tr class="space">
+                            <th>ram usage</th>
+                            <td>:</td>
+                            <td id="ram_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
+                        </tr>
+                        <tr class="space">
+                            <th>disk space</th>
+                            <td>:</td>
+                            <td id="disk_space_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
+                        </tr>
+                    </table>
+                </div>
+
+            </div>
+
+
         </div>
         <div id="spectrum_window" class="audio_spectrum border">
             <div style="bottom:0px;" id="audio_spectrum"></div>
@@ -52,7 +74,7 @@
             </table>
             <hr>
             <p class="audio_info_text">decoding status:</p>
-             <table class="table">
+            <table class="table">
                 <tr class="space">
                     <th>start tone</th>
                     <td>:</td>
@@ -87,7 +109,7 @@
                     <div id="audio_not_saved">
 
                     </div>
-                <audio id="output_audio" src="" controls></audio>
+                    <audio id="output_audio" src="" controls></audio>
                     <a class="button_convert" id="audio_download_button" href="" download="output.wav">download</a>
                 </div>
 

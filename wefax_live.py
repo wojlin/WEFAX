@@ -20,6 +20,7 @@ import scipy
 import math
 import scipy.fftpack
 
+from config import Config
 
 class DataPacket:
     def __init__(self, filepath, duration, number):
@@ -135,17 +136,19 @@ class DataPacket:
 
 class LiveDemodulator:
     def __init__(self, path: str, tcp_stream: bool = True):
+
+        config = Config()
         # ---- constants  ---- #
         self.CHUNK = 1024
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
         self.RATE = 11025
         self.OUTPUT_DIRECTORY = path
-        self.PACKET_DURATION = 1
+        self.AUDIO_PACKET_DURATION = config.audio_packet_duration
         self.LINES_PER_MINUTE = 120
         self.TIME_FOR_ONE_FRAME = 1 / (self.LINES_PER_MINUTE / 60)  # in s
         self.SAMPLES_FOR_ONE_FRAME = int(self.TIME_FOR_ONE_FRAME * self.RATE)
-        self.MINIMUM_FRAMES_PER_UPDATE = 10
+        self.MINIMUM_FRAMES_PER_UPDATE = config.minimum_frames_per_update
         # -------------------- #
 
         # ---- audio info ---- #
@@ -225,7 +228,8 @@ class LiveDemodulator:
             img = Image.new('L', (w, h), )
             px, py = 0, 0
             for p in range(len(frame_points)):
-                lum = 255 - frame_points[p]
+                #lum = 255 - frame_points[p]
+                lum = frame_points[p]
                 img.putpixel((px, py), lum)
                 px += 1
                 if px >= w:
@@ -260,14 +264,14 @@ class LiveDemodulator:
             self.frames_websocket_stack.append(frame_output_path)
             self.convert_process()
         else:
-            print(f'not enough samples ot build frame: {len(self.data_points)} of {self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE} required')
+            print(f'not enough samples to build frame: {len(self.data_points)} of {self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE} required')
             timer = threading.Timer(1.0, self.convert_process)
             timer.start()
 
     def record_process(self):
         while True:
             if self.connected and self.isRecording:
-                packet = self.record(self.PACKET_DURATION)
+                packet = self.record(self.AUDIO_PACKET_DURATION)
                 img = packet.spectrogram_image(save=True)
                 # packet.spectrogram_chart(save=True)
                 if not self.start_tone_found:
@@ -275,7 +279,7 @@ class LiveDemodulator:
                         self.amount_peaks_found += 1
                     else:
                         self.amount_peaks_found = 0
-                    if self.amount_peaks_found * self.PACKET_DURATION >= 4:
+                    if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
                         self.start_tone_found = True
 
                 self.data_points += packet.process()
@@ -344,6 +348,8 @@ class LiveDemodulator:
         return outfile
 
     def end_stream(self):
+        for thread in self.threads:
+            thread.join()
         if self.connected:
             self.stream.stop_stream()
             self.stream.close()

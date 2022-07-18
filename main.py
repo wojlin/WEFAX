@@ -16,6 +16,7 @@ import zipfile
 import logging
 import sys
 import signal
+import os, psutil
 
 from wefax import Demodulator
 from wefax_live import LiveDemodulator
@@ -183,6 +184,22 @@ def get_audio_info():
     return live_demodulator.audio_info()
 
 
+@app.route('/get_memory_usage')
+def get_memory_usage():
+    def get_directory_size(folder):
+        total_size = os.path.getsize(folder)
+        for item in os.listdir(folder):
+            itempath = os.path.join(folder, item)
+            if os.path.isfile(itempath):
+                total_size += os.path.getsize(itempath)
+            elif os.path.isdir(itempath):
+                total_size += get_directory_size(itempath)
+        return total_size
+
+    return {"ram_usage": int(psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2),
+            "disc_space": round(float(get_directory_size('static/temp') / 1024 / 1024), 2)}
+
+
 @app.route('/change_audio_device/<device_index>')
 def change_audio_device(device_index):
     global live_demodulator
@@ -197,7 +214,6 @@ def live_converter():
         live_demodulator.end_stream()
     live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
     return render_template('live_converter.html')
-
 
 
 @app.route('/gallery')

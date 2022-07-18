@@ -42,7 +42,20 @@
 .audio_setup { grid-area: audio_setup; display: flex;
   justify-content: center;
   align-items: center;
+  font-size:1.5vh;
+  font-weight:bold;
+
 }
+
+.space
+{
+font-weight:normal;
+}
+.audio_setup > div
+{
+    height:5vh;
+}
+
 .audio_spectrum
 { grid-area: audio_spectrum;
 position:relative;
@@ -90,6 +103,16 @@ overflow:hidden;
     text-align: left;
     border-collapse:separate;
   border-spacing: 0 2vh;
+}
+
+.table_memory
+{
+
+    margin:auto;
+    width:80%;
+    font-size: 1.5vh;
+    text-align: left;
+    border-collapse:separate;
 }
 
 .audio_info_text
@@ -142,15 +165,32 @@ overflow:hidden;
 #audio_setup_inline_left
 {
     display:inline-block;
-    width:70%;
+    width:50%;
     float:left;
+    margin-left:2vh;
+    padding-top:3vh;
+}
+
+#audio_setup_inline_center
+{
+    display:flex;
+    width:20%;
+    padding-left:2vh;
+    border-left:solid 1px rgba(255,255,255,0.5);
 }
 
 #audio_setup_inline_right
 {
     display:inline-block;
-    width:5vh;
-    float:right;
+    width:30%;
+    margin-left:auto;
+
+}
+
+.memory
+{
+    border-left: solid 1px rgba(255,255,255,0.5);
+    padding-left:2vh;
 }
 
 #record_control {
@@ -158,6 +198,7 @@ overflow:hidden;
   height: 5vh;
   cursor: pointer;
   position:relative;
+  margin-left:2vh;
 }
 #record_control .border {
   width: 100%;

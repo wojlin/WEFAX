@@ -6,7 +6,7 @@ function get_audio_devices()
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         {
             var json = JSON.parse(xmlHttp.responseText);
-            console.log(json);
+            //console.log(json);
             var audio_devices_select = document.getElementById("audio_devices_select");
 
             for(var i in json)
@@ -14,11 +14,18 @@ function get_audio_devices()
                 var key = i;
                 var name = json[i]["name"];
                 var index = json[i]["index"];
-                console.log(name);
+
+                //console.log(name);
                 var option = document.createElement("option");
                 option.text = name;
                 option.value = index;
                 audio_devices_select.appendChild(option);
+
+                if (name == "default")
+                {
+                    console.log('device set to default')
+                    document.getElementById("audio_devices_select").value = json[i]["index"];
+                }
             }
 
             change_audio_device(document.getElementById("audio_devices_select"));
@@ -150,7 +157,8 @@ function manage_sockets()
 
     socket.on('spectrum_upload', function(data)
     {
-        console.log(data);
+        //console.log(data);
+        console.log("spectrum updated!");
         var image = document.createElement('img');
          var channel_height = channel.clientHeight;
     var channel_width = channel.clientWidth;
@@ -163,8 +171,8 @@ function manage_sockets()
         image.style.width = channel_width + 'px';
         channel.insertBefore(image, channel.firstChild);
         spectrum_bottom = parseInt(channel.style.bottom, 10);
-        console.log(window_height)
-        console.log(channel_height)
+        //console.log(window_height)
+        //console.log(channel_height)
         channel.style.bottom = -channel_height + window_height + 'px';
 
     });
@@ -249,6 +257,27 @@ function manage_audio_info()
 }
 
 
+function manage_memory_info()
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            var text = JSON.parse(xmlHttp.responseText);
+            //console.log(text);
+            var ram_usage = document.getElementById("ram_usage");
+            var disk_space_usage = document.getElementById("disk_space_usage");
+
+            ram_usage.innerHTML = text["ram_usage"].toString() + ' MB';
+            disk_space_usage.innerHTML = text["disc_space"].toString() + ' MB';
+        }
+    }
+
+    xmlHttp.open("GET", '/get_memory_usage', true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
 
 function audio_info_interval(){
     manage_audio_info();
@@ -256,7 +285,14 @@ function audio_info_interval(){
     setTimeout(audio_info_interval, 1000);
 }
 
+function memory_info_interval(){
+    manage_memory_info();
+
+    setTimeout(memory_info_interval, 1000);
+}
+
 audio_info_interval();
+memory_info_interval();
 manage_sockets()
 manage_record_button();
 get_audio_devices();
