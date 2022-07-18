@@ -65,15 +65,30 @@ def get_progress(json):
         print(e)
 
 
-@socketio.on('get_images')
+@socketio.on('get_spectrum')
 def get_images():
     global live_demodulator
     try:
         notConverted = True
         while notConverted:
             if len(live_demodulator.spectrum_websocket_stack) > 0:
-                emit('image_upload', live_demodulator.spectrum_websocket_stack[0])
+                emit('spectrum_upload', live_demodulator.spectrum_websocket_stack[0])
                 live_demodulator.spectrum_websocket_stack.pop(0)
+    except Exception as e:
+        print(e)
+
+
+@socketio.on('get_frames')
+def get_frames():
+    global live_demodulator
+    try:
+        notConverted = True
+        while notConverted:
+
+            if len(live_demodulator.frames_websocket_stack) > 0:
+                print('frame upload', live_demodulator.frames_websocket_stack[0])
+                emit('frame_upload', live_demodulator.frames_websocket_stack[0])
+                live_demodulator.frames_websocket_stack.pop(0)
     except Exception as e:
         print(e)
 

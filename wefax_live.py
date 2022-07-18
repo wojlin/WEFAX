@@ -82,7 +82,7 @@ class DataPacket:
         freqs_one_side = freq[:n_oneside]
         amplitude_one_size = abs(fft[:n_oneside] / n_oneside)
 
-        normalized_amplitude = amplitude_one_size / max(amplitude_one_size)
+        normalized_amplitude = amplitude_one_size / (max(amplitude_one_size) + 0.0001)
         peaks = scipy.signal.find_peaks(normalized_amplitude, distance=200, height=0.2)
 
         if save or show:
@@ -216,28 +216,53 @@ class LiveDemodulator:
             return str(e)
 
     def convert_process(self):
-        while True:
-            if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
-                frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
+        if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
+            print('frame_convert')
+            frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
 
-                w, h = self.SAMPLES_FOR_ONE_FRAME, self.MINIMUM_FRAMES_PER_UPDATE
-                img = Image.new('L', (w, h), )
-                for y in range(h):
-                    for x in range(w):
-                        lum = 255 - frame_points[x*(y+1)]
-                        img.putpixel((x, y), lum)
+            frame_width = int(self.TIME_FOR_ONE_FRAME * self.RATE)
+            w, h = frame_width, len(frame_points) // frame_width
+            img = Image.new('L', (w, h), )
+            px, py = 0, 0
+            for p in range(len(frame_points)):
+                lum = 255 - frame_points[p]
+                img.putpixel((px, py), lum)
+                px += 1
+                if px >= w:
+                    px = 0
+                    py += 1
+                    if py >= h:
+                        break
 
-                img = img.resize((w, 4 * h))
+            img = img.resize((w, 4 * h))
 
-                min_frames = self.saved_frames*self.MINIMUM_FRAMES_PER_UPDATE
-                max_frames = (self.saved_frames+1)*self.MINIMUM_FRAMES_PER_UPDATE
-                frame_output_path = f'{self.OUTPUT_DIRECTORY}frame_{min_frames}-{max_frames}.png'
-                img.save(frame_output_path)
-                self.saved_frames += 1
 
-                self.data_points = self.data_points[self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:]
+            """w, h = self.SAMPLES_FOR_ONE_FRAME, self.MINIMUM_FRAMES_PER_UPDATE
+            img = Image.new('L', (w, h), )
+            for y in range(h):
+                for x in range(w):
+                    lum = 255 - frame_points[x*(y+1)]
+                    img.putpixel((x, y), lum)
 
-                self.frames_websocket_stack.append(frame_output_path)
+            img = img.resize((int(w/10), int(h)))"""
+
+
+
+            min_frames = self.saved_frames*self.MINIMUM_FRAMES_PER_UPDATE
+            max_frames = (self.saved_frames+1)*self.MINIMUM_FRAMES_PER_UPDATE
+            frame_output_path = f'{self.OUTPUT_DIRECTORY}frame_{min_frames}-{max_frames}.png'
+            img.save(frame_output_path)
+
+            self.saved_frames += 1
+
+            self.data_points = self.data_points[self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:]
+
+            self.frames_websocket_stack.append(frame_output_path)
+            self.convert_process()
+        else:
+            print(f'not enough samples ot build frame: {len(self.data_points)} of {self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE} required')
+            timer = threading.Timer(1.0, self.convert_process)
+            timer.start()
 
     def record_process(self):
         while True:

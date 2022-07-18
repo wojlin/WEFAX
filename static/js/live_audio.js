@@ -114,7 +114,7 @@ function get_combined_audio_file()
     xmlHttp.send(null);
 }
 
-function manage_live_spectrum()
+function manage_sockets()
 {
     var channel = document.getElementById("audio_spectrum");
 
@@ -131,6 +131,10 @@ function manage_live_spectrum()
 
     channel.style.bottom = window_height + 'px';
 
+
+    var frames_container = document.getElementById("image_frames");
+    var frames_container_width = frames_container.clientWidth;
+
     var socket = io();
 
      socket.addEventListener('message', function (event)
@@ -140,10 +144,11 @@ function manage_live_spectrum()
 
     socket.on('connect', function()
     {
-        socket.emit('get_images');
+        socket.emit('get_spectrum');
+        socket.emit('get_frames');
     });
 
-    socket.on('image_upload', function(data)
+    socket.on('spectrum_upload', function(data)
     {
         console.log(data);
         var image = document.createElement('img');
@@ -164,6 +169,16 @@ function manage_live_spectrum()
 
     });
 
+     socket.on('frame_upload', function(data)
+    {
+        console.log(data);
+        var image = document.createElement('img');
+        image.style.display = 'block';
+        image.src = data;
+        image.style.width = frames_container_width + 'px';
+        frames_container.appendChild(image);
+    });
+
 }
 
 function manage_audio_info()
@@ -174,7 +189,7 @@ function manage_audio_info()
         if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
         {
             var text = JSON.parse(xmlHttp.responseText);
-            console.log(text);
+            //console.log(text);
             var info_table_record_length = document.getElementById("info_table_record_length");
             var info_table_packets_buffered = document.getElementById("info_table_packets_buffered");
             var info_table_start_tone = document.getElementById("info_table_start_tone");
@@ -233,6 +248,8 @@ function manage_audio_info()
     xmlHttp.send(null);
 }
 
+
+
 function audio_info_interval(){
     manage_audio_info();
 
@@ -240,7 +257,6 @@ function audio_info_interval(){
 }
 
 audio_info_interval();
-
-manage_live_spectrum();
+manage_sockets()
 manage_record_button();
 get_audio_devices();

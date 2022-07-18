@@ -56,7 +56,7 @@ overflow:hidden;
   color:white;
   display:table;
   }
-.audio_image { grid-area: audio_image; }
+.audio_image { grid-area: audio_image;position:relative; }
 
 #audio_spectrum
 {
@@ -263,4 +263,13 @@ overflow:hidden;
     margin-top:1vh;
     padding:0.5vh;
     display:block;
+}
+
+#image_frames
+{
+position:absolute;
+left:10%;
+top:10%;
+right:10%;
+bottom:10%;
 }
