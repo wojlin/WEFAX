@@ -4,6 +4,19 @@
 
 tool for decoding and processing wefax
 
+
+<p float="left">
+  <img src="static/images/screen1.png" width="30%" />
+  <img src="static/images/screen2.png" width="30%" /> 
+  <img src="static/images/screen3.png" width="30%" />
+</p>
+<p float="left">
+  <img src="static/images/screen4.png" width="30%" />
+  <img src="static/images/screen5.png" width="30%" />
+</p>
+
+
+
 ### theory:
 WEFAX (Also known as Weatherfax, HF-FAX, Radiofax, and Weather Facsimile) is a slow scan analog image transmission mode used for the transmission of weather charts and meteorological reports
 
@@ -71,7 +84,14 @@ WEFAX has 60, 90, 100, 120, 180 and 240 LPM (Lines per minute) speeds, and two I
 ```
 git clone https://github.com/wojlin/WEFAX.git
 cd WEFAX
-pip install -r requirements.txt
+pip install flask
+pip install flask_socketio
+pip install numpy
+pip install scipy
+pip install matplotlib
+pip install Pillow
+pip install pyaudio
+pip install wave
 ```
 
 ### usage:
@@ -79,11 +99,12 @@ pip install -r requirements.txt
 python3 main.py
 ```
 
+
 ### TODO:
 - more responsive progress bar
-- live decoding 
-- tweaks in frontend style
-- create tests
+- fix demodulation problem in live decoding 
+- finish live decoding
+- implement more test cases
 - add alerts and bugs report
 
 

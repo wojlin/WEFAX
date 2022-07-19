@@ -117,10 +117,10 @@ class DataPacket:
                 return False
 
         if 4 <= len(found_peaks) <= 6:
-            print('\rpeak found')
+            #print('\rpeak found')
             return True
         else:
-            print('\rpeak not found')
+            #print('\rpeak not found')
             return False
 
     def process(self):
@@ -301,7 +301,16 @@ class LiveDemodulator:
                 timer = threading.Timer(1.0, self.convert_points_to_frames_thread)
                 timer.start()
 
-    def __process_audio_samples(self, __packet):
+    def __process_audio_samples(self, __samples):
+
+        __packet = DataPacket(self.RATE,
+                            np.array(__samples).flatten(),
+                            self.OUTPUT_DIRECTORY,
+                            self.AUDIO_PACKET_DURATION,
+                            self.saved_chunks)
+
+        self.data_packets.append(__packet)
+
         img = __packet.spectrogram_image(save=self.__save_spectrum)
 
         if not self.start_tone_found:
@@ -315,10 +324,10 @@ class LiveDemodulator:
         self.data_points += __packet.process()
 
         if self.__create_spectrogram_chart:
-            packet.spectrogram_chart(save=True)
+            __packet.spectrogram_chart(save=True)
 
         if self.__create_demodulated_chart:
-            packet.demodulated_chart(save=True)
+            __packet.demodulated_chart(save=True)
 
         if self.stream:
             buffered = BytesIO()
@@ -338,8 +347,8 @@ class LiveDemodulator:
             if stop_threads:
                 break
             if self.connected and self.isRecording:
-                packet = self.record(self.AUDIO_PACKET_DURATION)
-                thread = threading.Thread(target=self.__process_audio_samples, args=(packet,))
+                samples = self.__record(self.AUDIO_PACKET_DURATION)
+                thread = threading.Thread(target=self.__process_audio_samples, args=(samples,))
                 self.threads.append(thread)
                 thread.start()
 
@@ -360,11 +369,10 @@ class LiveDemodulator:
             return "recording need to be started in order to stop it"
 
     @check_connection_status
-    def record(self, duration):
+    def __record(self, duration):
 
         sprint = lambda text: sys.stdout.write(text)
         sprint(f"\rrecording packet {self.saved_chunks} ☐")
-
         frames = []
         value_frames = []
 
@@ -386,10 +394,8 @@ class LiveDemodulator:
             wf.close()
             print("file saved")
 
-        __packet = DataPacket(self.RATE, np.array(value_frames).flatten(), self.OUTPUT_DIRECTORY, duration, self.saved_chunks)
         self.saved_chunks += 1
-        self.data_packets.append(__packet)
-        return __packet
+        return value_frames
 
     @check_connection_status
     def combine(self):
@@ -431,26 +437,3 @@ class LiveDemodulator:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.end_stream()
-
-
-if __name__ == "__main__":
-    datestamp = str(round(time.time() * 1000))
-    save_directory = f"static/temp/{datestamp}/"
-    os.mkdir(save_directory)
-    with LiveDemodulator(save_directory) as live_demodulator:
-        devices = live_demodulator.get_devices()
-        for device in devices:
-            print(device['index'], device['name'])
-            # print(device)
-            # print('\n\n\n\n\n')
-        live_demodulator.connect(30)
-        for x in range(2):
-            live_demodulator.record(2)
-        live_demodulator.combine()
-
-        for packet in live_demodulator.data_packets:
-            packet.spectrogram_chart(save=True, show=True)
-            image = packet.spectrogram_image(save=True)
-            print(packet)
-        live_demodulator.end_stream()
-    print('end')
