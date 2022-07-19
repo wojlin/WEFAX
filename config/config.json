@@ -11,6 +11,7 @@
   },
   "debug_settings":
   {
+    "save_audio_packets": false,
     "save_spectrum": false,
     "save_start_tone": false,
     "save_frames": false,

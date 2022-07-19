@@ -9,24 +9,25 @@ import scipy.fftpack
 import numpy as np
 import threading
 import pyaudio
+import base64
 import scipy
 import wave
 import time
+import sys
 import os
-import base64
-from io import BytesIO
 
 from config import Config
 
 stop_threads = False
 
+
 class DataPacket:
-    def __init__(self, filepath, duration, number):
+    def __init__(self, sample_rate, samples, directory, duration, number):
         self.duration = duration
         self.number = number
-        self.filepath = filepath
-        self.directory = '/'.join(str(self.filepath).split('/')[:-1]) + '/'
-        self.sample_rate, self.samples = wavfile.read(self.filepath)
+        self.directory = directory
+        self.sample_rate = sample_rate
+        self.samples = samples
         self.fft_filepath = f'{self.directory}{self.number}_fft.png'
         self.demodulated_filepath = f'{self.directory}{self.number}_demodulated.png'
         self.chart_filepath = f'{self.directory}{self.number}_chart.png'
@@ -61,7 +62,7 @@ class DataPacket:
         arrange_labels_x = [f"{self.number * self.duration}s", f"{self.number * self.duration + self.duration}s"]
         plt.xticks(arrange_x, arrange_labels_x)
 
-        plt.title(f'{self.filepath}')
+        plt.title(f'audio packet {self.number}')
 
         if save:
             plt.savefig(self.chart_filepath)
@@ -110,15 +111,16 @@ class DataPacket:
                 plt.show()
 
         found_peaks = peaks[0]
-        print(found_peaks)
 
         for peak in freqs_one_side[peaks[0]]:
             if not 1000 < peak < 3000:
                 return False
 
         if 4 <= len(found_peaks) <= 6:
+            print('\rpeak found')
             return True
         else:
+            print('\rpeak not found')
             return False
 
     def process(self):
@@ -153,7 +155,7 @@ class LiveDemodulator:
         config = Config()
         # ---- constants  ---- #
         self.CHUNK = 1024
-        self.FORMAT = pyaudio.paInt16
+        self.FORMAT = pyaudio.paFloat32
         self.CHANNELS = 1
         self.RATE = 11025
         self.OUTPUT_DIRECTORY = path
@@ -165,6 +167,7 @@ class LiveDemodulator:
         # -------------------- #
 
         # -- debug variables -- #
+        self.__save_audio_packets = config.settings['debug_settings']['save_audio_packets']
         self.__save_spectrum = config.settings['debug_settings']['save_spectrum']
         self.__save_frames = config.settings['debug_settings']['save_frames']
         self.__save_start_tone = config.settings['debug_settings']['save_start_tone']
@@ -184,6 +187,7 @@ class LiveDemodulator:
         self.data_packets = []
         self.data_points = []
         self.threads = []
+        self.audio_frames = []
         self.spectrum_websocket_stack = []
         self.frames_websocket_stack = []
         self.connected = False
@@ -289,7 +293,6 @@ class LiveDemodulator:
             buffered = BytesIO()
             img.save(buffered, format="JPEG")
             img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
-            print(type(img_str))
             self.frames_websocket_stack.append(img_str)
 
             self.convert_points_to_frames_thread()
@@ -340,7 +343,6 @@ class LiveDemodulator:
                 self.threads.append(thread)
                 thread.start()
 
-
     @check_connection_status
     def start_recording(self):
         self.isRecording = True
@@ -359,42 +361,48 @@ class LiveDemodulator:
 
     @check_connection_status
     def record(self, duration):
-        print("recording_start")
+
+        sprint = lambda text: sys.stdout.write(text)
+        sprint(f"\rrecording packet {self.saved_chunks} ☐")
+
         frames = []
+        value_frames = []
 
         for i in range(0, int(self.RATE / self.CHUNK * duration)):
             data = self.stream.read(self.CHUNK)
             frames.append(data)
+            self.audio_frames.append(data)
+            value_frames.append(np.fromstring(data, np.float32))
 
-        print("recording_end")
-        filepath = self.OUTPUT_DIRECTORY + str(self.saved_chunks) + '.wav'
-        wf = wave.open(filepath, 'wb')
-        wf.setnchannels(self.CHANNELS)
-        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
-        wf.setframerate(self.RATE)
-        wf.writeframes(b''.join(frames))
-        wf.close()
-        self.data_packets.append(DataPacket(filepath, duration, self.saved_chunks))
+        sprint(f"\rrecording packet {self.saved_chunks} ☑")
+        print()
+        if self.__save_audio_packets:
+            filepath = self.OUTPUT_DIRECTORY + str(self.saved_chunks) + '.wav'
+            wf = wave.open(filepath, 'wb')
+            wf.setnchannels(self.CHANNELS)
+            wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+            wf.setframerate(self.RATE)
+            wf.writeframes(b''.join(frames))
+            wf.close()
+            print("file saved")
+
+        __packet = DataPacket(self.RATE, np.array(value_frames).flatten(), self.OUTPUT_DIRECTORY, duration, self.saved_chunks)
         self.saved_chunks += 1
-        print("file saved")
-        return DataPacket(filepath, duration, self.saved_chunks)
+        self.data_packets.append(__packet)
+        return __packet
 
     @check_connection_status
     def combine(self):
-        infiles = [f'{self.OUTPUT_DIRECTORY}{i}.wav' for i in range(self.saved_chunks)]
         outfile = self.OUTPUT_DIRECTORY + "output.wav"
 
-        data = []
-        for infile in infiles:
-            w = wave.open(infile, 'rb')
-            data.append([w.getparams(), w.readframes(w.getnframes())])
-            w.close()
+        wf = wave.open(outfile, 'wb')
+        wf.setnchannels(self.CHANNELS)
+        wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
+        wf.setframerate(self.RATE)
+        wf.writeframes(b''.join(self.audio_frames))
+        wf.close()
+        print("file saved")
 
-        output = wave.open(outfile, 'wb')
-        output.setparams(data[0][0])
-        for i in range(len(data)):
-            output.writeframes(data[i][1])
-        output.close()
         return outfile
 
     def end_stream(self):
