@@ -12,6 +12,9 @@
   "debug_settings":
   {
     "save_spectrum": false,
-    "save_frames": false
+    "save_start_tone": false,
+    "save_frames": false,
+    "create_spectrogram_chart": false,
+    "create_demodulated_chart": false
   }
 }

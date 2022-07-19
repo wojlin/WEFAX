@@ -167,7 +167,7 @@ function manage_sockets()
         var time_max_var = '-' + (window_height  * segment_duration / segment_height).toFixed(1).toString() + 's';
         time_max.innerHTML = time_max_var;
         image.style.display = 'block';
-        image.src = data['src'];
+        image.src = "data:image/jpeg;base64,"+ data['src'];
         image.style.width = channel_width + 'px';
         channel.insertBefore(image, channel.firstChild);
         spectrum_bottom = parseInt(channel.style.bottom, 10);

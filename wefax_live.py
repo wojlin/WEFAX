@@ -165,9 +165,12 @@ class LiveDemodulator:
         # -------------------- #
 
         # -- debug variables -- #
-        self.save_frames = config.settings['debug_settings']['save_frames']
+        self.__save_spectrum = config.settings['debug_settings']['save_spectrum']
+        self.__save_frames = config.settings['debug_settings']['save_frames']
+        self.__save_start_tone = config.settings['debug_settings']['save_start_tone']
+        self.__create_spectrogram_chart = config.settings['debug_settings']['create_spectrogram_chart']
+        self.__create_demodulated_chart = config.settings['debug_settings']['create_demodulated_chart']
         # --------------------- #
-
 
         # ---- audio info ---- #
         self.start_tone_found = False
@@ -229,8 +232,8 @@ class LiveDemodulator:
             for thread in self.threads:
                 thread.join()
             stop_threads = False
-            thread1 = threading.Thread(target=self.record_process, args=())
-            thread2 = threading.Thread(target=self.convert_process, args=())
+            thread1 = threading.Thread(target=self.record_thread, args=())
+            thread2 = threading.Thread(target=self.convert_points_to_frames_thread, args=())
             self.threads.append(thread1)
             self.threads.append(thread2)
             thread1.start()
@@ -240,7 +243,7 @@ class LiveDemodulator:
             print(e)
             return str(e)
 
-    def convert_process(self):
+    def convert_points_to_frames_thread(self):
         global stop_threads
         if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
             print('frame_convert')
@@ -276,7 +279,7 @@ class LiveDemodulator:
             max_frames = (self.saved_frames + 1) * self.MINIMUM_FRAMES_PER_UPDATE
             frame_output_path = f'{self.OUTPUT_DIRECTORY}frame_{min_frames}-{max_frames}.png'
 
-            if self.save_frames:
+            if self.__save_frames:
                 img.save(frame_output_path)
 
             self.saved_frames += 1
@@ -289,38 +292,54 @@ class LiveDemodulator:
             print(type(img_str))
             self.frames_websocket_stack.append(img_str)
 
-            self.convert_process()
+            self.convert_points_to_frames_thread()
         else:
             if not stop_threads:
-                timer = threading.Timer(1.0, self.convert_process)
+                timer = threading.Timer(1.0, self.convert_points_to_frames_thread)
                 timer.start()
 
-    def record_process(self):
+    def __process_audio_samples(self, __packet):
+        img = __packet.spectrogram_image(save=self.__save_spectrum)
+
+        if not self.start_tone_found:
+            if __packet.find_start_tone(save=self.__save_start_tone):
+                self.amount_peaks_found += 1
+            else:
+                self.amount_peaks_found = 0
+            if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
+                self.start_tone_found = True
+
+        self.data_points += __packet.process()
+
+        if self.__create_spectrogram_chart:
+            packet.spectrogram_chart(save=True)
+
+        if self.__create_demodulated_chart:
+            packet.demodulated_chart(save=True)
+
+        if self.stream:
+            buffered = BytesIO()
+            img.save(buffered, format="PNG")
+            img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
+
+            json_message = {"width": int(img.width),
+                            "height": int(img.height),
+                            "src": str(img_str),
+                            "length": float(__packet.duration)}
+
+            self.spectrum_websocket_stack.append(json_message)
+
+    def record_thread(self):
         global stop_threads
         while True:
             if stop_threads:
                 break
             if self.connected and self.isRecording:
                 packet = self.record(self.AUDIO_PACKET_DURATION)
-                img = packet.spectrogram_image(save=True)
-                # packet.spectrogram_chart(save=True)
-                if not self.start_tone_found:
-                    if packet.find_start_tone(save=False, show=False):
-                        self.amount_peaks_found += 1
-                    else:
-                        self.amount_peaks_found = 0
-                    if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
-                        self.start_tone_found = True
+                thread = threading.Thread(target=self.__process_audio_samples, args=(packet,))
+                self.threads.append(thread)
+                thread.start()
 
-                self.data_points += packet.process()
-                # packet.spectrogram_chart(save=True)
-                #packet.demodulated_chart(save=True)
-                if self.stream:
-                    json_message = {"width": int(img.width),
-                                    "height": int(img.height),
-                                    "src": str(packet.spectrum_filepath),
-                                    "length": float(packet.duration)}
-                    self.spectrum_websocket_stack.append(json_message)
 
     @check_connection_status
     def start_recording(self):
