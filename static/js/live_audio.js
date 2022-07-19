@@ -182,7 +182,7 @@ function manage_sockets()
         console.log(data);
         var image = document.createElement('img');
         image.style.display = 'block';
-        image.src = data;
+        image.src = "data:image/jpeg;base64,"+data;
         image.style.width = frames_container_width + 'px';
         frames_container.appendChild(image);
     });

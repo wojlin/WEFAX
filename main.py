@@ -32,7 +32,8 @@ signal.signal(signal.SIGINT, stop)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+MAX_BUFFER_SIZE = 50 * 1000 * 1000  # 50 MB
+socketio = SocketIO(app, max_http_buffer_size=MAX_BUFFER_SIZE)
 
 demodulators = {}
 
@@ -87,7 +88,7 @@ def get_frames():
         while notConverted:
 
             if len(live_demodulator.frames_websocket_stack) > 0:
-                print('frame upload', live_demodulator.frames_websocket_stack[0])
+                print('frame upload')
                 emit('frame_upload', live_demodulator.frames_websocket_stack[0])
                 live_demodulator.frames_websocket_stack.pop(0)
     except Exception as e:

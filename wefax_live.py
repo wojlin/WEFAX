@@ -1,26 +1,24 @@
+from matplotlib.ticker import FormatStrFormatter
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
+from matplotlib import cm
+from scipy import signal
+from io import BytesIO
+from PIL import Image
+import scipy.fftpack
+import numpy as np
+import threading
 import pyaudio
+import scipy
 import wave
 import time
 import os
-
-import matplotlib.pyplot as plt
-from scipy import signal
-from scipy.io import wavfile
-import io
-from scipy.io.wavfile import read, write
-from matplotlib.ticker import FormatStrFormatter
-import numpy as np
-import threading
-
-from PIL import Image
-from matplotlib import cm
-
-import scipy
-
-import math
-import scipy.fftpack
+import base64
+from io import BytesIO
 
 from config import Config
+
+stop_threads = False
 
 class DataPacket:
     def __init__(self, filepath, duration, number):
@@ -30,8 +28,23 @@ class DataPacket:
         self.directory = '/'.join(str(self.filepath).split('/')[:-1]) + '/'
         self.sample_rate, self.samples = wavfile.read(self.filepath)
         self.fft_filepath = f'{self.directory}{self.number}_fft.png'
+        self.demodulated_filepath = f'{self.directory}{self.number}_demodulated.png'
         self.chart_filepath = f'{self.directory}{self.number}_chart.png'
         self.spectrum_filepath = f'{self.directory}{self.number}_spectrum.png'
+
+    def demodulated_chart(self, save: bool = True, show: bool = False):
+        plt.clf()
+        plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f s'))
+        data_am_crop = self.__demodulate(self.samples)
+        plt.plot(data_am_crop)
+
+        # for sig in self.phasing_signals:
+        #     plt.axvline(x=sig, color='red', linestyle='--')
+
+        if save:
+            plt.savefig(self.demodulated_filepath)
+        if show:
+            plt.show()
 
     def spectrogram_chart(self, save: bool = True, show: bool = False):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
@@ -70,7 +83,7 @@ class DataPacket:
 
         return img
 
-    def find_sync_pulse(self, save: bool = True, show: bool = False):
+    def find_start_tone(self, save: bool = True, show: bool = False):
 
         fft = np.fft.fft(self.samples)
 
@@ -125,7 +138,7 @@ class DataPacket:
         phigh = 99.5
         (low, high) = np.percentile(data, (plow, phigh))
         delta = high - low
-        digitalized = np.round(255 * (data - low) / (delta+0.000001))
+        digitalized = np.round(255 * (data - low) / (delta + 0.000001))
         digitalized[digitalized < 0] = 0
         digitalized[digitalized > 255] = 255
         return [int(point) for point in digitalized]
@@ -144,12 +157,17 @@ class LiveDemodulator:
         self.CHANNELS = 1
         self.RATE = 11025
         self.OUTPUT_DIRECTORY = path
-        self.AUDIO_PACKET_DURATION = config.audio_packet_duration
+        self.AUDIO_PACKET_DURATION = config.settings['recording_settings']['audio_packet_duration']
         self.LINES_PER_MINUTE = 120
         self.TIME_FOR_ONE_FRAME = 1 / (self.LINES_PER_MINUTE / 60)  # in s
         self.SAMPLES_FOR_ONE_FRAME = int(self.TIME_FOR_ONE_FRAME * self.RATE)
-        self.MINIMUM_FRAMES_PER_UPDATE = config.minimum_frames_per_update
+        self.MINIMUM_FRAMES_PER_UPDATE = config.settings['recording_settings']['minimum_frames_per_update']
         # -------------------- #
+
+        # -- debug variables -- #
+        self.save_frames = config.settings['debug_settings']['save_frames']
+        # --------------------- #
+
 
         # ---- audio info ---- #
         self.start_tone_found = False
@@ -189,10 +207,13 @@ class LiveDemodulator:
         return [self.p.get_device_info_by_index(i) for i in range(self.p.get_device_count())]
 
     def connect(self, device_index: int):
+        global stop_threads
         device = self.p.get_device_info_by_index(device_index)
         print(f"connecting to {device['name']} on channel {device['index']}")
         try:
             if self.connected:
+                stop_threads = True
+                self.p.terminate()
                 self.stream.stop_stream()
                 self.stream.close()
 
@@ -207,6 +228,7 @@ class LiveDemodulator:
             self.connected = True
             for thread in self.threads:
                 thread.join()
+            stop_threads = False
             thread1 = threading.Thread(target=self.record_process, args=())
             thread2 = threading.Thread(target=self.convert_process, args=())
             self.threads.append(thread1)
@@ -219,6 +241,7 @@ class LiveDemodulator:
             return str(e)
 
     def convert_process(self):
+        global stop_threads
         if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
             print('frame_convert')
             frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
@@ -228,7 +251,7 @@ class LiveDemodulator:
             img = Image.new('L', (w, h), )
             px, py = 0, 0
             for p in range(len(frame_points)):
-                #lum = 255 - frame_points[p]
+                # lum = 255 - frame_points[p]
                 lum = frame_points[p]
                 img.putpixel((px, py), lum)
                 px += 1
@@ -240,7 +263,6 @@ class LiveDemodulator:
 
             img = img.resize((w, 4 * h))
 
-
             """w, h = self.SAMPLES_FOR_ONE_FRAME, self.MINIMUM_FRAMES_PER_UPDATE
             img = Image.new('L', (w, h), )
             for y in range(h):
@@ -250,32 +272,40 @@ class LiveDemodulator:
 
             img = img.resize((int(w/10), int(h)))"""
 
-
-
-            min_frames = self.saved_frames*self.MINIMUM_FRAMES_PER_UPDATE
-            max_frames = (self.saved_frames+1)*self.MINIMUM_FRAMES_PER_UPDATE
+            min_frames = self.saved_frames * self.MINIMUM_FRAMES_PER_UPDATE
+            max_frames = (self.saved_frames + 1) * self.MINIMUM_FRAMES_PER_UPDATE
             frame_output_path = f'{self.OUTPUT_DIRECTORY}frame_{min_frames}-{max_frames}.png'
-            img.save(frame_output_path)
+
+            if self.save_frames:
+                img.save(frame_output_path)
 
             self.saved_frames += 1
 
             self.data_points = self.data_points[self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:]
 
-            self.frames_websocket_stack.append(frame_output_path)
+            buffered = BytesIO()
+            img.save(buffered, format="JPEG")
+            img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
+            print(type(img_str))
+            self.frames_websocket_stack.append(img_str)
+
             self.convert_process()
         else:
-            print(f'not enough samples to build frame: {len(self.data_points)} of {self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE} required')
-            timer = threading.Timer(1.0, self.convert_process)
-            timer.start()
+            if not stop_threads:
+                timer = threading.Timer(1.0, self.convert_process)
+                timer.start()
 
     def record_process(self):
+        global stop_threads
         while True:
+            if stop_threads:
+                break
             if self.connected and self.isRecording:
                 packet = self.record(self.AUDIO_PACKET_DURATION)
                 img = packet.spectrogram_image(save=True)
                 # packet.spectrogram_chart(save=True)
                 if not self.start_tone_found:
-                    if packet.find_sync_pulse(save=False, show=False):
+                    if packet.find_start_tone(save=False, show=False):
                         self.amount_peaks_found += 1
                     else:
                         self.amount_peaks_found = 0
@@ -283,7 +313,8 @@ class LiveDemodulator:
                         self.start_tone_found = True
 
                 self.data_points += packet.process()
-
+                # packet.spectrogram_chart(save=True)
+                #packet.demodulated_chart(save=True)
                 if self.stream:
                     json_message = {"width": int(img.width),
                                     "height": int(img.height),
@@ -348,6 +379,8 @@ class LiveDemodulator:
         return outfile
 
     def end_stream(self):
+        global stop_threads
+        stop_threads = True
         for thread in self.threads:
             thread.join()
         if self.connected:

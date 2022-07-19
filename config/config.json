@@ -1,4 +1,17 @@
 {
-  "audio_packet_duration": 1,
-  "minimum_frames_per_update": 10
+  "host_settings":
+  {
+    "host": "localhost",
+    "port": 2137
+  },
+  "recording_settings":
+  {
+    "audio_packet_duration": 1,
+    "minimum_frames_per_update": 10
+  },
+  "debug_settings":
+  {
+    "save_spectrum": false,
+    "save_frames": false
+  }
 }
