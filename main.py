@@ -1,25 +1,25 @@
-import datetime
-import threading
-import os
-from flask import Flask, send_from_directory, render_template, request, send_file
+from flask import Flask, send_from_directory, render_template, request
 from werkzeug.utils import secure_filename
-import shutil
-import time
-import pyaudio
-from flask_socketio import SocketIO
-
-from flask_socketio import emit
-import ast
 from distutils.dir_util import copy_tree
+from flask_socketio import SocketIO
+from flask_socketio import emit
 from zipfile import ZipFile
+import threading
+import datetime
 import zipfile
 import logging
-import sys
+import pyaudio
+import psutil
 import signal
-import os, psutil
+import shutil
+import time
+import ast
+import sys
+import os
 
-from wefax import Demodulator
 from wefax_live import LiveDemodulator
+from wefax import Demodulator
+from config import Config
 
 
 def stop(signum, frame):
@@ -36,7 +36,7 @@ MAX_BUFFER_SIZE = 50 * 1000 * 1000  # 50 MB
 socketio = SocketIO(app, max_http_buffer_size=MAX_BUFFER_SIZE)
 
 demodulators = {}
-
+config = Config()
 
 def delete_directory(path: str, datestamp: str):
     print(f"{path} deleted")
@@ -288,5 +288,9 @@ if __name__ == "__main__":
     os.mkdir(save_directory)
 
     live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
+    host = config.settings['host_settings']['host']
+    port = config.settings['host_settings']['port']
+    url = f"http://{host}:{port}"
+    print(f"\u001b]8;;{url}\u001b\\{url}\u001b]8;;\u001b\\")
 
-    socketio.run(app, host="localhost", port=2137, debug=True)
+    socketio.run(app, host=host, port=port, debug=True)

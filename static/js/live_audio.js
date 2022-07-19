@@ -179,7 +179,7 @@ function manage_sockets()
 
      socket.on('frame_upload', function(data)
     {
-        console.log(data);
+        console.log('frame_upload');
         var image = document.createElement('img');
         image.style.display = 'block';
         image.src = "data:image/jpeg;base64,"+data;
