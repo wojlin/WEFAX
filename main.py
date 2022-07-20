@@ -233,7 +233,8 @@ def convert_file():
         r = request.form
         datestamp = r['datestamp']
         demodulator = demodulators[datestamp]
-
+        print(int(r['lpm']))
+        demodulator.update_lines_per_minute(int(r['lpm']))
         print('############')
         print('converting')
         print(demodulator.file_info())

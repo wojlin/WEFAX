@@ -15,7 +15,7 @@ function convert_file()
      var data = new FormData();
 
      data.append('datestamp', document.getElementById("file_info_datestamp").innerHTML);
-
+     data.append('lpm', document.getElementById("lines_per_minute").value);
 
      var socket = io();
 

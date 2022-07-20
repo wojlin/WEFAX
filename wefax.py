@@ -33,6 +33,10 @@ class Demodulator:
 
         self.websocket_stack = []
 
+    def update_lines_per_minute(self, lpm):
+        self.lines_per_minute = lpm
+        self.time_for_one_frame = 1 / (lpm / 60)  # in s
+
     def process(self):
 
         if self.quiet:
