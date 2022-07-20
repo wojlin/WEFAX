@@ -101,6 +101,11 @@ python3 main.py
 
 
 ### TODO:
+- fix UI bug when filename is too long
+- fix UI bug when image frame height is too big in image preview
+- fix UI bug when image frame height is too big in gallery
+- fix convert bug when wav files have low spikes (cut unused frequencies before hilbert transform)
+- fix memory allocation problem
 - more responsive progress bar
 - fix demodulation problem in live decoding 
 - finish live decoding
