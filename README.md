@@ -102,8 +102,8 @@ python3 main.py
 
 ### TODO:
 - f̶i̶x̶ ̶U̶I̶ ̶b̶u̶g̶ ̶w̶h̶e̶n̶ ̶f̶i̶l̶e̶n̶a̶m̶e̶ ̶i̶s̶ ̶t̶o̶o̶ ̶l̶o̶n̶g̶
-- fix UI bug when image frame height is too big in image preview
-- fix UI bug when image frame height is too big in gallery
+- f̶i̶x̶ ̶U̶I̶ ̶b̶u̶g̶ ̶w̶h̶e̶n̶ ̶i̶m̶a̶g̶e̶ ̶f̶r̶a̶m̶e̶ ̶h̶e̶i̶g̶h̶t̶ ̶i̶s̶ ̶t̶o̶o̶ ̶b̶i̶g̶ ̶i̶n̶ ̶i̶m̶a̶g̶e̶ ̶p̶r̶e̶v̶i̶e̶w̶
+- f̶i̶x̶ ̶U̶I̶ ̶b̶u̶g̶ ̶w̶h̶e̶n̶ ̶i̶m̶a̶g̶e̶ ̶f̶r̶a̶m̶e̶ ̶h̶e̶i̶g̶h̶t̶ ̶i̶s̶ ̶t̶o̶o̶ ̶b̶i̶g̶ ̶i̶n̶ ̶g̶a̶l̶l̶e̶r̶y̶
 - fix convert bug when wav files have low spikes (cut unused frequencies before hilbert transform)
 - fix memory allocation problem
 - more responsive progress bar

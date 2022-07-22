@@ -313,14 +313,17 @@ height:5vh;
 
 
 
-#output_image
-{
-    border: black solid 1px;
-    width:80%;
-    position:absolute;
-    top: 40%;
-    left:50%;
-    transform:translate(-50%,-50%);
+#output_image {
+	border: black solid 1px;
+	position: absolute;
+	top: 45%;
+	left: 50%;
+	transform: translate(-50%,-50%);
+	display: block;
+	max-width: 90%;
+	max-height: 50vh;
+	width: auto;
+	height: auto;
 }
 
 

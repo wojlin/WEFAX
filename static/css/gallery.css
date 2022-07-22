@@ -109,14 +109,16 @@ width:auto;
 }
 
 
-#gallery-image
-{
-    width:80%;
-    display:block;
-    margin:auto;
-    margin-top:2vh;
-    margin-bottom:2vh;
-
+#gallery-image {
+	width: 80%;
+	display: block;
+	margin: auto;
+	margin-top: 2vh;
+	margin-bottom: 2vh;
+	width: auto;
+	height: auto;
+	max-height: 40vh;
+	max-width: 80%;
 }
 
 
