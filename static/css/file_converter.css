@@ -203,8 +203,10 @@
 
 
 
-
-
+.table_info_tr
+{
+height:5vh;
+}
 
 #alert
 {
@@ -260,10 +262,11 @@
 
 }
 
-#file_info_filename, #file_info_length, #file_info_rate, #file_info_channels
-{
-    color: #bfbcb2;
-    padding-left:35px;
+#file_info_filename, #file_info_length, #file_info_rate, #file_info_channels {
+	color: #bfbcb2;
+	padding-left: 35px;
+	font-size: 1.5ch;
+	word-break: break-word;
 }
 
 #file_info > th

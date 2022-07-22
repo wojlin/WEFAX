@@ -76,22 +76,22 @@
 <div style="display:none;" id="file_info" class="box">
     <p style="visibility: hidden" id="file_info_datestamp">none</p>
     <table id="file_info_table">
-        <tr>
+        <tr class="table_info_tr">
             <th>filename</th>
             <td>:</td>
             <td id="file_info_filename">none</td>
         </tr>
-        <tr>
+        <tr class="table_info_tr">
             <th>audio channels</th>
             <td>:</td>
             <td id="file_info_channels">none</td>
         </tr>
-        <tr>
+        <tr class="table_info_tr">
             <th>audio length</th>
             <td>:</td>
             <td id="file_info_length">none</td>
         </tr>
-        <tr>
+        <tr class="table_info_tr">
             <th>sample rate</th>
             <td>:</td>
             <td id="file_info_rate">none</td>
@@ -275,5 +275,12 @@
 <script src="static/js/socketio"></script>
 <script src="static/js/upload.js"></script>
 <script src="static/js/convert_file.js"></script>
-
+<script>
+    function limit_text(str, max_letters)
+    {
+        if (str.length > max_letters)
+            return str.substring(0,max_letters-3) + '...';
+        return str;
+    }
+</script>
 {% endblock %}

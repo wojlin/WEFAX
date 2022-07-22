@@ -24,16 +24,19 @@ function upload(file)
       body: data
     });
 
+
+
     req.then(function(response) {
       console.log('success');
       response.text().then(function (text) {
           console.log(text);
             var json = JSON.parse(text);
             document.getElementById('file_info_datestamp').innerHTML = json['datestamp'];
-            document.getElementById('file_info_filename').innerHTML = json['filename'];
-            document.getElementById('file_info_channels').innerHTML = json['channels'];
-            document.getElementById('file_info_length').innerHTML = parseFloat(json['length']).toFixed(2) + ' s';
-            document.getElementById('file_info_rate').innerHTML = parseFloat(json['sample_rate'])/1000 + ' KHz';
+
+            document.getElementById('file_info_filename').innerHTML = limit_text(json['filename'],16);
+            document.getElementById('file_info_channels').innerHTML = limit_text(json['channels'],16);
+            document.getElementById('file_info_length').innerHTML = limit_text((parseFloat(json['length']).toFixed(2) + ' s').toString(),16);
+            document.getElementById('file_info_rate').innerHTML = limit_text((parseFloat(json['sample_rate'])/1000 + ' KHz').toString(),16);
             title_panel.classList.add("slide_out");
             upload_panel.classList.add("slide_out");
             file_info.style.display = 'block';

@@ -101,7 +101,7 @@ python3 main.py
 
 
 ### TODO:
-- fix UI bug when filename is too long
+- f̶i̶x̶ ̶U̶I̶ ̶b̶u̶g̶ ̶w̶h̶e̶n̶ ̶f̶i̶l̶e̶n̶a̶m̶e̶ ̶i̶s̶ ̶t̶o̶o̶ ̶l̶o̶n̶g̶
 - fix UI bug when image frame height is too big in image preview
 - fix UI bug when image frame height is too big in gallery
 - fix convert bug when wav files have low spikes (cut unused frequencies before hilbert transform)

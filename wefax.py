@@ -33,6 +33,9 @@ class Demodulator:
 
         self.websocket_stack = []
 
+        if not self.quiet:
+            print("#" * 10 + ' ' * 5 + str(self.filename).ljust(20) + ' ' * 5 + "#" * 10)
+
     def update_lines_per_minute(self, lpm):
         self.lines_per_minute = lpm
         self.time_for_one_frame = 1 / (lpm / 60)  # in s
@@ -44,7 +47,7 @@ class Demodulator:
         else:
             sys.stdout = sys.__stdout__
 
-        print("#" * 10 + ' ' * 5 + str(self.filename).ljust(20) + ' ' * 5 + "#" * 10)
+
 
         self.audio_data, self.sample_rate, self.length = self.__read_file()
 
@@ -58,12 +61,13 @@ class Demodulator:
         self.digitalized_data = self.__digitalize(self.demodulated_data)
         time.sleep(2)
         self.phasing_signals = self.__find_sync_pulse(self.digitalized_data, self.sample_rate, self.time_for_one_frame)
-        self.start_frame = self.phasing_signals[-1]
+
+        self.start_frame = self.phasing_signals[-1] if self.phasing_signals else 0
 
         self.output_image = self.__convert_to_image(self.digitalized_data[self.start_frame:],
                                                     self.time_for_one_frame,
                                                     self.sample_rate)
-        print("#" * 50)
+        #print("#" * 50)
 
         if self.stream:
             message = {"data_type": "message",
@@ -85,7 +89,7 @@ class Demodulator:
         spec = plt.mlab.specgram(sound[:window], Fs=rate, detrend='linear', scale_by_freq=False)
         arr = spec[0]
         freq = spec[1]
-        max_freq = 2000
+        max_freq = 5000
         cut = max_freq / freq[-1] * arr.shape[0]
         plt.ylim(0, cut)
         im = plt.imshow(arr, animated=True, cmap='magma')
@@ -141,7 +145,7 @@ class Demodulator:
         for sig in self.phasing_signals:
             plt.axvline(x=sig, color='red', linestyle='--')
 
-        plt.savefig(self.filename + "_signal", dpi=600)
+        plt.savefig(self.filename.split('.')[0] + ".png", dpi=600)
         plt.show()
 
     def __demodulate(self, data: list):
@@ -390,13 +394,13 @@ class Demodulator:
 
 
 if __name__ == "__main__":
-    demodulator = Demodulator('input/input_lq.wav',
-                              lines_per_minute=120,
-                              tcp_stream=True)
-    print(demodulator.file_info())
-    input()
+    demodulator = Demodulator('test_files/tokyo_noise.wav',
+                              lines_per_minute=90,
+                              tcp_stream=False, quiet=False)
+    for key, value in demodulator.file_info().items():
+        print(key, ":", value)
     demodulator.process()
-    # demodulator.animated_spectrum()
+    #demodulator.animated_spectrum()
     # demodulator.show_output_image()
-    # demodulator.signal_chart(0, 25.5)
-    # demodulator.save_output_image("input.png")
+    demodulator.signal_chart(20, 35.5)
+    demodulator.save_output_image("input.png")
