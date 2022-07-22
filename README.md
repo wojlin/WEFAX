@@ -106,7 +106,7 @@ python3 main.py
 - f̶i̶x̶ ̶U̶I̶ ̶b̶u̶g̶ ̶w̶h̶e̶n̶ ̶i̶m̶a̶g̶e̶ ̶f̶r̶a̶m̶e̶ ̶h̶e̶i̶g̶h̶t̶ ̶i̶s̶ ̶t̶o̶o̶ ̶b̶i̶g̶ ̶i̶n̶ ̶g̶a̶l̶l̶e̶r̶y̶
 - fix convert bug when wav files have low spikes (cut unused frequencies before hilbert transform)
 - fix memory allocation problem
-- more responsive progress bar
+- m̶o̶r̶e̶ ̶r̶e̶s̶p̶o̶n̶s̶i̶v̶e̶ ̶p̶r̶o̶g̶r̶e̶s̶s̶ ̶b̶a̶r̶
 - fix demodulation problem in live decoding 
 - finish live decoding
 - implement more test cases

@@ -39,110 +39,38 @@
     margin-top:3vh;
     margin-bottom:0vh;
 }
-#percentage_bar{
-    margin:auto;
-    position:absolute;
-    top: 50%;
-    left:50%;
-    transform:translate(-50%,-50%);
 
-    user-select: none;
-    box-sizing: border-box;
-    width: 40vh;
-    height: 40vh;
+#progress_container {
+  height: 50vh;
+  width: 50vh;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
 }
-.loader-bg
-{
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 1vh solid rgba(255, 255, 255, 0.1);
-    box-sizing: border-box;
+#circular-progress {
+  position: relative;
+  height: 40vh;
+  width: 40vh;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
 }
-.spiner-holder-one
-{
-    position: absolute;
-    top:0;
-    left:0;
-    overflow: hidden;
-    width: 50%;
-    height: 50%;
-    background: transparent;
-    box-sizing: border-box;
+#circular-progress:before {
+  content: "";
+  position: absolute;
+  height: 89%;
+  width: 89%;
+  background-color: rgba(34, 34, 34, 1);
+  border-radius: 50%;
 }
-.spiner-holder-two
-{
-    position: absolute;
-    top:0;
-    left:0;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    box-sizing: border-box;
-}
-.loader-spiner
-{
-    width: 200%;
-    height: 200%;
-    border-radius: 50%;
-    border: 1vh solid rgba(255, 255, 255, 0.3);
-    box-sizing: border-box;
-}
-  .animate-0-25-a
-{
-    transform: rotate(90deg);
-    transform-origin: 100% 100%;
-}
-.animate-0-25-b
-{
-    transform: rotate(-90deg);
-    transform-origin: 100% 100%;
-}
-.animate-25-50-a
-{
-    transform: rotate(180deg);
-    transform-origin: 100% 100%;
-}
-.animate-25-50-b
-{
-    transform: rotate(-90deg);
-    transform-origin: 100% 100%;
-}
-.animate-50-75-a
-{
-    transform: rotate(270deg);
-    transform-origin: 100% 100%;
-}
-.animate-50-75-b
-{
-    transform: rotate(-90deg);
-    transform-origin:100% 100%;
-}
-.animate-75-100-a
-{
-    transform: rotate(0deg);
-    transform-origin: 100% 100%;
-}
-.animate-75-100-b
-{
-    transform: rotate(-90deg);
-    transform-origin: 100% 100%;
-}
-#percentage_text
-{
-    margin:auto;
-    user-select: none;
-    box-sizing: border-box;
-
-    position: absolute;
-    top: 50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-
-    text-align: center;
-    font-size: 7vh;
-    color: rgba(255, 255, 255, 0.8);
+#value-container {
+  position: relative;
+  font-family: "Poppins", sans-serif;
+  font-size: 6vh;
+  color: white;
 }
 
 

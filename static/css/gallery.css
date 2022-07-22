@@ -71,6 +71,14 @@ width:auto;
     display:block;
     background: rgba(54, 54, 54, 0.8);
     cursor: pointer;
+    transform: scale(1);
+    transition: all 0.1s;
+}
+
+.gallery_box:hover
+{
+    background: rgba(54, 54, 54, 0.6);
+    transform: scale(1.03);
 }
 
 .gallery_icon
