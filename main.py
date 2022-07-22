@@ -222,6 +222,11 @@ def gallery():
     return render_template('gallery.html')
 
 
+@app.route('/wiki')
+def wiki():
+    return render_template('wiki.html')
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
