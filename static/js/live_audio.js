@@ -55,6 +55,24 @@ function change_audio_device(element)
 }
 
 
+function change_lines_per_minute(val)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            var text = xmlHttp.responseText;
+            console.log(text);
+
+        }
+    }
+
+    xmlHttp.open("GET", '/change_lines_per_minute/'+val.toString(), true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+
 function manage_record_button()
 {
     var playButton = document.getElementById('record_control');
@@ -70,6 +88,9 @@ function manage_record_button()
                 if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
                 {
                     var text = xmlHttp.responseText;
+                    document.getElementById("audio_devices_select").disabled = true;
+                    document.getElementById("custom-select").style.opacity = 0.2;
+                    document.getElementById("custom-select").style.pointerEvents = "none";
                     console.log(text);
 
                 }
@@ -87,6 +108,9 @@ function manage_record_button()
                 {
                     var text = xmlHttp.responseText;
                     console.log(text);
+                    document.getElementById("audio_devices_select").disabled = false;
+                    document.getElementById("custom-select").style.opacity = 1;
+                    document.getElementById("custom-select").style.pointerEvents = "all";
                     get_combined_audio_file();
 
                 }
@@ -291,6 +315,7 @@ function memory_info_interval(){
     setTimeout(memory_info_interval, 1000);
 }
 
+change_lines_per_minute(document.querySelector(".select-selected").innerHTML);
 audio_info_interval();
 memory_info_interval();
 manage_sockets()

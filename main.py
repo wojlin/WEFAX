@@ -207,6 +207,12 @@ def change_audio_device(device_index):
     return live_demodulator.connect(int(device_index))
 
 
+@app.route('/change_lines_per_minute/<lpm>')
+def change_lines_per_minute(lpm):
+    global live_demodulator
+    return live_demodulator.change_lines_per_minute(int(lpm))
+
+
 @app.route('/live_converter')
 def live_converter():
     global live_demodulator

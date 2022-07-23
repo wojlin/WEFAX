@@ -213,10 +213,19 @@ class LiveDemodulator:
     def get_devices(self):
         return [self.p.get_device_info_by_index(i) for i in range(self.p.get_device_count())]
 
+    def change_lines_per_minute(self, lpm: int):
+        old_lpm = self.LINES_PER_MINUTE
+        self.LINES_PER_MINUTE = lpm
+        self.TIME_FOR_ONE_FRAME = 1 / (self.LINES_PER_MINUTE / 60)  # in s
+        self.SAMPLES_FOR_ONE_FRAME = int(self.TIME_FOR_ONE_FRAME * self.RATE)
+        print(f"changed lines per minute from {old_lpm} to {lpm}")
+        return f"changed lines per minute from {old_lpm} to {lpm}"
+
     def connect(self, device_index: int):
         global stop_threads
         device = self.p.get_device_info_by_index(device_index)
         print(f"connecting to {device['name']} on channel {device['index']}")
+
         try:
             if self.connected:
                 stop_threads = True
