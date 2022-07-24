@@ -2,7 +2,8 @@
   "host_settings":
   {
     "host": "localhost",
-    "port": 2137
+    "port": 2137,
+    "debug": true
   },
   "recording_settings":
   {

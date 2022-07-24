@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
@@ -16,6 +18,9 @@ import time
 import sys
 import os
 
+import matplotlib
+matplotlib.use('Agg')
+
 from config import Config
 
 stop_threads = False
@@ -33,21 +38,13 @@ class DataPacket:
         self.chart_filepath = f'{self.directory}{self.number}_chart.png'
         self.spectrum_filepath = f'{self.directory}{self.number}_spectrum.png'
 
-    def demodulated_chart(self, save: bool = True, show: bool = False):
-        plt.clf()
-        plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f s'))
+    def demodulated_chart(self):
         data_am_crop = self.__demodulate(self.samples)
         plt.plot(data_am_crop)
+        plt.savefig(self.demodulated_filepath)
+        plt.clf()
 
-        # for sig in self.phasing_signals:
-        #     plt.axvline(x=sig, color='red', linestyle='--')
-
-        if save:
-            plt.savefig(self.demodulated_filepath)
-        if show:
-            plt.show()
-
-    def spectrogram_chart(self, save: bool = True, show: bool = False):
+    def spectrogram_chart(self):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
         plt.pcolormesh(times, frequencies, spectrogram, cmap='gist_earth')
         plt.ylabel('Frequency [Hz]')
@@ -64,10 +61,9 @@ class DataPacket:
 
         plt.title(f'audio packet {self.number}')
 
-        if save:
-            plt.savefig(self.chart_filepath)
-        if show:
-            plt.show()
+        plt.savefig(self.chart_filepath)
+        plt.clf()
+
 
     def spectrogram_image(self, save: bool = True):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate, mode="magnitude")
@@ -110,6 +106,10 @@ class DataPacket:
             if show:
                 plt.show()
 
+            plt.clf()
+
+
+
         found_peaks = peaks[0]
 
         for peak in freqs_one_side[peaks[0]]:
@@ -150,12 +150,12 @@ class DataPacket:
 
 
 class LiveDemodulator:
-    def __init__(self, path: str, tcp_stream: bool = True):
+    def __init__(self, path: str):
 
         config = Config()
         # ---- constants  ---- #
         self.CHUNK = 1024
-        self.FORMAT = pyaudio.paFloat32
+        self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
         self.RATE = 11025
         self.OUTPUT_DIRECTORY = path
@@ -195,10 +195,11 @@ class LiveDemodulator:
         self.amount_peaks_found = 0
         self.saved_chunks = 0
         self.saved_frames = 0
+        self.device_id = 0
         # -------------------- #
 
         self.p = pyaudio.PyAudio()
-        self.stream = tcp_stream
+        self.stream = None
 
     def check_connection_status(func):
         def wrapper(self, *args, **kwargs):
@@ -225,28 +226,16 @@ class LiveDemodulator:
         global stop_threads
         device = self.p.get_device_info_by_index(device_index)
         print(f"connecting to {device['name']} on channel {device['index']}")
-
+        self.device_id = device['index']
         try:
-            if self.connected:
-                stop_threads = True
-                self.p.terminate()
-                self.stream.stop_stream()
-                self.stream.close()
-
-            self.stream = self.p.open(format=self.FORMAT,
-                                      channels=self.CHANNELS,
-                                      rate=self.RATE,
-                                      input=True,
-                                      output=True,
-                                      input_device_index=device['index'],
-                                      frames_per_buffer=self.CHUNK)
-            print('connected!')
             self.connected = True
             for thread in self.threads:
                 thread.join()
             stop_threads = False
             thread1 = threading.Thread(target=self.record_thread, args=())
+            thread1.setDaemon(True)
             thread2 = threading.Thread(target=self.convert_points_to_frames_thread, args=())
+            thread2.setDaemon(True)
             self.threads.append(thread1)
             self.threads.append(thread2)
             thread1.start()
@@ -308,6 +297,7 @@ class LiveDemodulator:
         else:
             if not stop_threads:
                 timer = threading.Timer(1.0, self.convert_points_to_frames_thread)
+                timer.setDaemon(True)
                 timer.start()
 
     def __process_audio_samples(self, __samples):
@@ -333,22 +323,21 @@ class LiveDemodulator:
         self.data_points += __packet.process()
 
         if self.__create_spectrogram_chart:
-            __packet.spectrogram_chart(save=True)
+            __packet.spectrogram_chart()
 
         if self.__create_demodulated_chart:
-            __packet.demodulated_chart(save=True)
+            __packet.demodulated_chart()
 
-        if self.stream:
-            buffered = BytesIO()
-            img.save(buffered, format="PNG")
-            img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = str(base64.b64encode(buffered.getvalue()))[2:-1]
 
-            json_message = {"width": int(img.width),
-                            "height": int(img.height),
-                            "src": str(img_str),
-                            "length": float(__packet.duration)}
+        json_message = {"width": int(img.width),
+                        "height": int(img.height),
+                        "src": str(img_str),
+                        "length": float(__packet.duration)}
 
-            self.spectrum_websocket_stack.append(json_message)
+        self.spectrum_websocket_stack.append(json_message)
 
     def record_thread(self):
         global stop_threads
@@ -357,13 +346,32 @@ class LiveDemodulator:
                 break
             if self.connected and self.isRecording:
                 samples = self.__record(self.AUDIO_PACKET_DURATION)
+                #self.__process_audio_samples(samples)
                 thread = threading.Thread(target=self.__process_audio_samples, args=(samples,))
+                thread.setDaemon(True)
                 self.threads.append(thread)
                 thread.start()
 
     @check_connection_status
     def start_recording(self):
+        global stop_threads
+
+        if self.stream:
+            stop_threads = True
+            self.p.terminate()
+            self.stream.stop_stream()
+            self.stream.close()
+
+        self.stream = self.p.open(format=self.FORMAT,
+                                  channels=self.CHANNELS,
+                                  rate=self.RATE,
+                                  input=True,
+                                  output=True,
+                                  input_device_index=self.device_id,
+                                  frames_per_buffer=self.CHUNK)
+
         self.isRecording = True
+        print('connected!')
         print("recording started")
         return "recording started"
 
@@ -389,7 +397,7 @@ class LiveDemodulator:
             data = self.stream.read(self.CHUNK)
             frames.append(data)
             self.audio_frames.append(data)
-            value_frames.append(np.fromstring(data, np.float32))
+            value_frames.append(np.fromstring(data, np.int16))
 
         sprint(f"\rrecording packet {self.saved_chunks} ☑")
         print()

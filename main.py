@@ -33,10 +33,11 @@ signal.signal(signal.SIGINT, stop)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 MAX_BUFFER_SIZE = 50 * 1000 * 1000  # 50 MB
-socketio = SocketIO(app, max_http_buffer_size=MAX_BUFFER_SIZE)
+socketio = SocketIO(app, max_http_buffer_size=MAX_BUFFER_SIZE, async_mode="threading")
 
 demodulators = {}
 config = Config()
+
 
 def delete_directory(path: str, datestamp: str):
     print(f"{path} deleted")
@@ -219,7 +220,7 @@ def live_converter():
     if live_demodulator is not None:
         live_demodulator.stop_recording()
         live_demodulator.end_stream()
-    live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
+    live_demodulator = LiveDemodulator(path=save_directory)
     return render_template('live_converter.html')
 
 
@@ -299,10 +300,11 @@ if __name__ == "__main__":
     save_directory = f"static/temp/{dir_name}/"
     os.mkdir(save_directory)
 
-    live_demodulator = LiveDemodulator(path=save_directory, tcp_stream=True)
+    live_demodulator = LiveDemodulator(path=save_directory)
     host = config.settings['host_settings']['host']
     port = config.settings['host_settings']['port']
+    debug = config.settings['host_settings']['debug']
     url = f"http://{host}:{port}"
     print(f"\u001b]8;;{url}\u001b\\{url}\u001b]8;;\u001b\\")
 
-    socketio.run(app, host=host, port=port, debug=True)
+    socketio.run(app, host=host, port=port, debug=debug)
