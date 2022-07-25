@@ -17,6 +17,7 @@ import ast
 import sys
 import os
 
+from colored_text import debug_log, Colors
 from wefax_live import LiveDemodulator
 from wefax import Demodulator
 from config import Config
@@ -89,7 +90,7 @@ def get_frames():
         while notConverted:
 
             if len(live_demodulator.frames_websocket_stack) > 0:
-                print('frame upload')
+                debug_log("frame upload", Colors.info)
                 emit('frame_upload', live_demodulator.frames_websocket_stack[0])
                 live_demodulator.frames_websocket_stack.pop(0)
     except Exception as e:

@@ -1,5 +1,6 @@
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.pyplot as plt
+from datetime import datetime
 from scipy.io import wavfile
 from matplotlib import cm
 from scipy import signal
@@ -18,7 +19,11 @@ import os
 
 from config import Config
 
+from colored_text import debug_log, Colors
+
 stop_threads = False
+
+
 
 
 class DataPacket:
@@ -35,7 +40,6 @@ class DataPacket:
         self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
         self.audio_chart_filepath = f'{self.directory}{self.number}_audio_chart.png'
 
-
     def __filter(self, samples):
 
         def butter_bandpass(lowcut, highcut, fs, order=5):
@@ -51,7 +55,6 @@ class DataPacket:
         for i in range(len(samples)):
             if abs(samples[i]) > max_silence:
                 cut_samples.append(samples[i])
-        print(len(samples), len(cut_samples))
 
         low_cut = 1000
         high_cut = 4500
@@ -174,10 +177,8 @@ class DataPacket:
                 return False
 
         if 4 <= len(found_peaks) <= 6:
-            # print('\rpeak found')
             return True
         else:
-            # print('\rpeak not found')
             return False
 
     def process(self):
@@ -276,7 +277,7 @@ class LiveDemodulator:
             if self.connected:
                 return func(self, *args, **kwargs)
             else:
-                print("sound device not connected. choose device before calling other methods")
+                debug_log("sound device not connected. choose device before calling other methods", Colors.error)
                 return "sound device not connected. choose device before calling other methods"
 
         return wrapper
@@ -286,13 +287,13 @@ class LiveDemodulator:
         self.LINES_PER_MINUTE = lpm
         self.TIME_FOR_ONE_FRAME = 1 / (self.LINES_PER_MINUTE / 60)  # in s
         self.SAMPLES_FOR_ONE_FRAME = int(self.TIME_FOR_ONE_FRAME * self.RATE)
-        print(f"changed lines per minute from {old_lpm} to {lpm}")
+        debug_log(f"changed lines per minute from {old_lpm} to {lpm}", Colors.warning)
         return f"changed lines per minute from {old_lpm} to {lpm}"
 
     def connect(self, device_index: int):
         global stop_threads
         device = self.p.get_device_info_by_index(device_index)
-        print(f"connecting to {device['name']} on channel {device['index']}")
+        debug_log(f"connecting to {device['name']} on channel {device['index']}", Colors.warning)
         self.device_id = device['index']
         try:
             self.connected = True
@@ -309,13 +310,13 @@ class LiveDemodulator:
             thread2.start()
             return "success"
         except Exception as e:
-            print(e)
+            debug_log(e, Colors.error)
             return str(e)
 
     def convert_points_to_frames_thread(self):
         global stop_threads
         if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
-            print('frame_convert')
+            debug_log("frame_convert", Colors.info)
             frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
 
             frame_width = int(self.TIME_FOR_ONE_FRAME * self.RATE)
@@ -437,32 +438,27 @@ class LiveDemodulator:
                                   frames_per_buffer=self.RATE * self.AUDIO_PACKET_DURATION)
 
         self.isRecording = True
-        print('connected!')
-        print("recording started")
+        debug_log("recording started", Colors.warning)
         return "recording started"
 
     @check_connection_status
     def stop_recording(self):
         if self.isRecording:
             self.isRecording = False
-            print("recording stopped")
+            debug_log("recording stopped", Colors.warning)
             return "recording stopped"
         else:
-            print("recording need to be started in order to stop it")
+            debug_log("recording need to be started in order to stop it", Colors.error)
             return "recording need to be started in order to stop it"
 
     @check_connection_status
     def __record(self, duration):
-
-        sprint = lambda text: sys.stdout.write(text)
-        sprint(f"\rrecording packet {self.saved_chunks} ☐")
-
         data = self.stream.read(self.RATE * duration)
         self.audio_frames.append(data)
         value_frames = np.fromstring(data, self.NUMPY_FORMAT)
 
-        sprint(f"\rrecording packet {self.saved_chunks} ☑")
-        print()
+        debug_log(f"recorded packet {self.saved_chunks}...", Colors.passed)
+
         if self.__save_audio_packets:
             filepath = self.OUTPUT_DIRECTORY + str(self.saved_chunks) + '.wav'
             wf = wave.open(filepath, 'wb')
@@ -471,7 +467,7 @@ class LiveDemodulator:
             wf.setframerate(self.RATE)
             wf.writeframes(b''.join([data]))
             wf.close()
-            print("file saved")
+            debug_log("file saved", Colors.info)
 
         self.saved_chunks += 1
         return value_frames
@@ -486,7 +482,7 @@ class LiveDemodulator:
         wf.setframerate(self.RATE)
         wf.writeframes(b''.join(self.audio_frames))
         wf.close()
-        print("file saved")
+        debug_log("file saved", Colors.info)
 
         return outfile
 
