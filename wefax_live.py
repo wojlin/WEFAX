@@ -1,5 +1,3 @@
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib.ticker import FormatStrFormatter
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
@@ -18,9 +16,6 @@ import time
 import sys
 import os
 
-import matplotlib
-matplotlib.use('Agg')
-
 from config import Config
 
 stop_threads = False
@@ -32,25 +27,88 @@ class DataPacket:
         self.number = number
         self.directory = directory
         self.sample_rate = sample_rate
-        self.samples = samples
-        self.fft_filepath = f'{self.directory}{self.number}_fft.png'
-        self.demodulated_filepath = f'{self.directory}{self.number}_demodulated.png'
-        self.chart_filepath = f'{self.directory}{self.number}_chart.png'
-        self.spectrum_filepath = f'{self.directory}{self.number}_spectrum.png'
+        self.samples = self.__filter(samples)
+        self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
+        self.find_tone_chart_filepath = f'{self.directory}{self.number}_find_tone_chart.png'
+        self.demodulated_chart_filepath = f'{self.directory}{self.number}_demodulated_chart.png'
+        self.spectrogram_chart_filepath = f'{self.directory}{self.number}_spectrogram_chart.png'
+        self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
+        self.audio_chart_filepath = f'{self.directory}{self.number}_audio_chart.png'
 
-    def demodulated_chart(self):
-        data_am_crop = self.__demodulate(self.samples)
-        plt.plot(data_am_crop)
-        plt.savefig(self.demodulated_filepath)
+
+    def __filter(self, samples):
+
+        def butter_bandpass(lowcut, highcut, fs, order=5):
+            return scipy.signal.butter(order, [lowcut, highcut], fs=fs, btype='band', output='ba')
+
+        def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+            b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+            y = scipy.signal.lfilter(b, a, data)
+            return y
+
+        max_silence = 1000
+        cut_samples = []
+        for i in range(len(samples)):
+            if abs(samples[i]) > max_silence:
+                cut_samples.append(samples[i])
+        print(len(samples), len(cut_samples))
+
+        low_cut = 1000
+        high_cut = 4500
+
+        if self.sample_rate / 2 > 4500:
+            filtered_samples = butter_bandpass_filter(cut_samples, low_cut, high_cut, self.sample_rate, order=6)
+        else:
+            filtered_samples = samples
+
+        return filtered_samples
+
+    def fft_chart(self, show: bool = False):
+        fft = np.fft.fft(self.samples)
+
+        N = len(fft)
+        n = np.arange(N)
+        T = N / self.sample_rate
+        freq = n / T
+
+        n_oneside = N // 2
+        freqs_one_side = freq[:n_oneside]
+        amplitude_one_size = abs(fft[:n_oneside] / n_oneside)
+        normalized_amplitude = amplitude_one_size / (max(amplitude_one_size) + 0.0001)
+
+        plt.plot(freqs_one_side, normalized_amplitude)
+
+        plt.savefig(self.fft_chart_filepath)
+        if show:
+            plt.show()
         plt.clf()
 
-    def spectrogram_chart(self):
+    def audio_chart(self, show: bool = False):
+        Time = np.linspace(0, len(self.samples) / self.sample_rate, num=len(self.samples))
+
+        plt.figure(1)
+        plt.title("Signal Wave...")
+        plt.plot(Time, self.samples)
+        plt.savefig(self.audio_chart_filepath)
+        if show:
+            plt.show()
+        plt.clf()
+
+    def demodulated_chart(self, show: bool = False):
+        data_am_crop = self.__demodulate(self.samples)
+        plt.plot(data_am_crop)
+        plt.savefig(self.demodulated_chart_filepath)
+        if show:
+            plt.show()
+        plt.clf()
+
+    def spectrogram_chart(self, show: bool = False):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate)
         plt.pcolormesh(times, frequencies, spectrogram, cmap='gist_earth')
         plt.ylabel('Frequency [Hz]')
         plt.xlabel('Time [sec]')
 
-        max_freq = 5000
+        max_freq = frequencies[-1]
         arrange_y = [0, max_freq]
         arrange_labels_y = [f"{int(frequencies[0])}Hz", f"{max_freq}Hz"]
         plt.yticks(arrange_y, arrange_labels_y)
@@ -61,9 +119,10 @@ class DataPacket:
 
         plt.title(f'audio packet {self.number}')
 
-        plt.savefig(self.chart_filepath)
+        plt.savefig(self.spectrogram_chart_filepath)
+        if show:
+            plt.show()
         plt.clf()
-
 
     def spectrogram_image(self, save: bool = True):
         frequencies, times, spectrogram = signal.spectrogram(self.samples, self.sample_rate, mode="magnitude")
@@ -76,7 +135,7 @@ class DataPacket:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
 
         if save:
-            img.save(self.spectrum_filepath)
+            img.save(self.spectrogram_image_filepath)
 
         return img
 
@@ -102,13 +161,11 @@ class DataPacket:
             plt.plot(freqs_one_side, normalized_amplitude)
             plt.plot(freqs_one_side[peaks[0]], peaks[1]['peak_heights'], "x")
             if save:
-                plt.savefig(self.fft_filepath)
+                plt.savefig(self.find_tone_chart_filepath)
             if show:
                 plt.show()
 
             plt.clf()
-
-
 
         found_peaks = peaks[0]
 
@@ -117,10 +174,10 @@ class DataPacket:
                 return False
 
         if 4 <= len(found_peaks) <= 6:
-            #print('\rpeak found')
+            # print('\rpeak found')
             return True
         else:
-            #print('\rpeak not found')
+            # print('\rpeak not found')
             return False
 
     def process(self):
@@ -130,9 +187,21 @@ class DataPacket:
 
     @staticmethod
     def __demodulate(data):
-        hilbert_signal = scipy.signal.hilbert(data)
-        filtered_signal = scipy.signal.medfilt(np.abs(hilbert_signal), 5)
-        return filtered_signal
+        hilbert_signal = np.abs(scipy.signal.hilbert(data))
+        filtered_samples = scipy.signal.medfilt(hilbert_signal, 3)
+
+        mean = sum(filtered_samples) / len(filtered_samples)
+        hilbert_cut = []
+        found = False
+        for i in range(len(filtered_samples)):
+            if not found:
+                if filtered_samples[i] > mean:
+                    hilbert_cut.append(filtered_samples[i])
+                    found = True
+            else:
+                hilbert_cut.append(filtered_samples[i])
+
+        return hilbert_cut
 
     @staticmethod
     def __digitalize(data):
@@ -154,10 +223,11 @@ class LiveDemodulator:
 
         config = Config()
         # ---- constants  ---- #
-        self.CHUNK = 1024
-        self.FORMAT = pyaudio.paInt16
-        self.CHANNELS = 1
         self.RATE = 11025
+        self.CHUNK = self.RATE
+        self.FORMAT = pyaudio.paInt16
+        self.NUMPY_FORMAT = np.int16
+        self.CHANNELS = 1
         self.OUTPUT_DIRECTORY = path
         self.AUDIO_PACKET_DURATION = config.settings['recording_settings']['audio_packet_duration']
         self.LINES_PER_MINUTE = 120
@@ -210,9 +280,6 @@ class LiveDemodulator:
                 return "sound device not connected. choose device before calling other methods"
 
         return wrapper
-
-    def get_devices(self):
-        return [self.p.get_device_info_by_index(i) for i in range(self.p.get_device_count())]
 
     def change_lines_per_minute(self, lpm: int):
         old_lpm = self.LINES_PER_MINUTE
@@ -303,10 +370,10 @@ class LiveDemodulator:
     def __process_audio_samples(self, __samples):
 
         __packet = DataPacket(self.RATE,
-                            np.array(__samples).flatten(),
-                            self.OUTPUT_DIRECTORY,
-                            self.AUDIO_PACKET_DURATION,
-                            self.saved_chunks)
+                              __samples,
+                              self.OUTPUT_DIRECTORY,
+                              self.AUDIO_PACKET_DURATION,
+                              self.saved_chunks)
 
         self.data_packets.append(__packet)
 
@@ -346,7 +413,6 @@ class LiveDemodulator:
                 break
             if self.connected and self.isRecording:
                 samples = self.__record(self.AUDIO_PACKET_DURATION)
-                #self.__process_audio_samples(samples)
                 thread = threading.Thread(target=self.__process_audio_samples, args=(samples,))
                 thread.setDaemon(True)
                 self.threads.append(thread)
@@ -366,9 +432,9 @@ class LiveDemodulator:
                                   channels=self.CHANNELS,
                                   rate=self.RATE,
                                   input=True,
-                                  output=True,
+                                  output=False,
                                   input_device_index=self.device_id,
-                                  frames_per_buffer=self.CHUNK)
+                                  frames_per_buffer=self.RATE * self.AUDIO_PACKET_DURATION)
 
         self.isRecording = True
         print('connected!')
@@ -390,14 +456,10 @@ class LiveDemodulator:
 
         sprint = lambda text: sys.stdout.write(text)
         sprint(f"\rrecording packet {self.saved_chunks} ☐")
-        frames = []
-        value_frames = []
 
-        for i in range(0, int(self.RATE / self.CHUNK * duration)):
-            data = self.stream.read(self.CHUNK)
-            frames.append(data)
-            self.audio_frames.append(data)
-            value_frames.append(np.fromstring(data, np.int16))
+        data = self.stream.read(self.RATE * duration)
+        self.audio_frames.append(data)
+        value_frames = np.fromstring(data, self.NUMPY_FORMAT)
 
         sprint(f"\rrecording packet {self.saved_chunks} ☑")
         print()
@@ -407,7 +469,7 @@ class LiveDemodulator:
             wf.setnchannels(self.CHANNELS)
             wf.setsampwidth(self.p.get_sample_size(self.FORMAT))
             wf.setframerate(self.RATE)
-            wf.writeframes(b''.join(frames))
+            wf.writeframes(b''.join([data]))
             wf.close()
             print("file saved")
 
