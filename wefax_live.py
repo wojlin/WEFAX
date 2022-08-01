@@ -24,8 +24,6 @@ from colored_text import debug_log, Colors
 stop_threads = False
 
 
-
-
 class DataPacket:
     def __init__(self, sample_rate, samples, directory, duration, number):
         self.duration = duration
@@ -39,10 +37,11 @@ class DataPacket:
         self.spectrogram_chart_filepath = f'{self.directory}{self.number}_spectrogram_chart.png'
         self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
         self.audio_chart_filepath = f'{self.directory}{self.number}_audio_chart.png'
+        self.processed_chart_filepath = f'{self.directory}{self.number}_processed_chart.png'
 
     def __filter(self, samples):
 
-        def butter_bandpass(lowcut, highcut, fs, order=5):
+        """def butter_bandpass(lowcut, highcut, fs, order=5):
             return scipy.signal.butter(order, [lowcut, highcut], fs=fs, btype='band', output='ba')
 
         def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
@@ -62,9 +61,9 @@ class DataPacket:
         if self.sample_rate / 2 > 4500:
             filtered_samples = butter_bandpass_filter(cut_samples, low_cut, high_cut, self.sample_rate, order=6)
         else:
-            filtered_samples = samples
+            filtered_samples = samples"""
 
-        return filtered_samples
+        return samples  # filtered_samples
 
     def fft_chart(self, show: bool = False):
         fft = np.fft.fft(self.samples)
@@ -82,6 +81,8 @@ class DataPacket:
         plt.plot(freqs_one_side, normalized_amplitude)
 
         plt.savefig(self.fft_chart_filepath)
+        debug_log("fft chart saved", Colors.debug)
+
         if show:
             plt.show()
         plt.clf()
@@ -91,8 +92,9 @@ class DataPacket:
 
         plt.figure(1)
         plt.title("Signal Wave...")
-        plt.plot(Time, self.samples)
+        plt.plot(Time, self.samples, '-ok')
         plt.savefig(self.audio_chart_filepath)
+        debug_log("audio chart saved", Colors.debug)
         if show:
             plt.show()
         plt.clf()
@@ -101,6 +103,53 @@ class DataPacket:
         data_am_crop = self.__demodulate(self.samples)
         plt.plot(data_am_crop)
         plt.savefig(self.demodulated_chart_filepath)
+        debug_log("demodulated chart saved", Colors.debug)
+        if show:
+            plt.show()
+        plt.clf()
+
+    def processed_chart(self, show: bool = False):
+        am = self.__demodulate(self.samples)
+        digitalized = self.__digitalize(am)
+
+        fig, axs = plt.subplots(3, 1)
+        axs[0].set_title(f'demodulated signal')
+        axs[0].plot(am)
+        axs[0].set_xlabel('time')
+        axs[0].set_ylabel('value')
+        axs[0].grid(True)
+        axs[0].set_xlim(left=0)
+        axs[0].set_ylim(bottom=0)
+        axs[0].set_xlim(right=len(am))
+
+        x = np.arange(0, len(digitalized), 1)
+        axs[1].set_title(f'digitalized signal')
+        axs[1].step(x, digitalized)
+        axs[1].set_xlabel('time')
+        axs[1].set_ylabel('lum')
+        axs[1].grid(True)
+        axs[1].set_xlim(left=0)
+        axs[1].set_xlim(right=len(digitalized))
+        axs[1].set_ylim(bottom=0)
+        axs[1].set_ylim(top=255)
+
+        w, h = len(digitalized), 300
+        img = Image.new('L', (w, h), )
+        for h in range(h):
+            for p in range(w):
+                # lum = 255 - frame_points[p]
+                lum = digitalized[p]
+                img.putpixel((p, h), lum)
+
+        img = img.resize((w, 4 * h))
+
+        axs[2].set_title(f'pixels')
+        axs[2].imshow(img, cmap='gist_gray')
+
+        fig.tight_layout()
+
+        plt.savefig(self.processed_chart_filepath)
+        debug_log("processed chart saved", Colors.debug)
         if show:
             plt.show()
         plt.clf()
@@ -123,6 +172,7 @@ class DataPacket:
         plt.title(f'audio packet {self.number}')
 
         plt.savefig(self.spectrogram_chart_filepath)
+        debug_log("spectrogram chart saved", Colors.debug)
         if show:
             plt.show()
         plt.clf()
@@ -139,6 +189,7 @@ class DataPacket:
 
         if save:
             img.save(self.spectrogram_image_filepath)
+            debug_log("spectrogram image saved", Colors.debug)
 
         return img
 
@@ -191,7 +242,7 @@ class DataPacket:
         hilbert_signal = np.abs(scipy.signal.hilbert(data))
         filtered_samples = scipy.signal.medfilt(hilbert_signal, 3)
 
-        mean = sum(filtered_samples) / len(filtered_samples)
+        """mean = sum(filtered_samples) / len(filtered_samples)
         hilbert_cut = []
         found = False
         for i in range(len(filtered_samples)):
@@ -200,9 +251,9 @@ class DataPacket:
                     hilbert_cut.append(filtered_samples[i])
                     found = True
             else:
-                hilbert_cut.append(filtered_samples[i])
+                hilbert_cut.append(filtered_samples[i])"""
 
-        return hilbert_cut
+        return filtered_samples
 
     @staticmethod
     def __digitalize(data):
@@ -224,7 +275,7 @@ class LiveDemodulator:
 
         config = Config()
         # ---- constants  ---- #
-        self.RATE = 11025
+        self.RATE = 48000  # 11025
         self.CHUNK = self.RATE
         self.FORMAT = pyaudio.paInt16
         self.NUMPY_FORMAT = np.int16
