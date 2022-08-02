@@ -18,5 +18,5 @@ def debug_data_packet(sample_rate, samples, directory, duration, number):
 
 
 if __name__ == "__main__":
-    _sample_rate, _samples = wavfile.read('test_files/0_notch.wav')
+    _sample_rate, _samples = wavfile.read('test_files/30.wav')
     debug_data_packet(_sample_rate, _samples, 'static/temp/', int(_samples[0]/_sample_rate), 0)

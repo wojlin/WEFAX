@@ -26,11 +26,16 @@ stop_threads = False
 
 class DataPacket:
     def __init__(self, sample_rate, samples, directory, duration, number):
+
+        self.__NOTCH_FILTER_FREQUENCY = 2600
+        self.__NOTCH_FILTER_QUALITY_FACTOR = 1
+
         self.duration = duration
         self.number = number
         self.directory = directory
         self.sample_rate = sample_rate
-        self.samples = self.__filter(samples)
+        self.raw_samples = samples
+        self.samples = self.__notch_filter(self.raw_samples)
         self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
         self.find_tone_chart_filepath = f'{self.directory}{self.number}_find_tone_chart.png'
         self.demodulated_chart_filepath = f'{self.directory}{self.number}_demodulated_chart.png'
@@ -39,7 +44,8 @@ class DataPacket:
         self.audio_chart_filepath = f'{self.directory}{self.number}_audio_chart.png'
         self.processed_chart_filepath = f'{self.directory}{self.number}_processed_chart.png'
 
-    def __filter(self, samples):
+
+    def __notch_filter(self, samples):
 
         """def butter_bandpass(lowcut, highcut, fs, order=5):
             return scipy.signal.butter(order, [lowcut, highcut], fs=fs, btype='band', output='ba')
@@ -63,7 +69,14 @@ class DataPacket:
         else:
             filtered_samples = samples"""
 
-        return samples  # filtered_samples
+        b_notch, a_notch = signal.iirnotch(self.__NOTCH_FILTER_FREQUENCY,
+                                           self.__NOTCH_FILTER_QUALITY_FACTOR,
+                                           self.sample_rate)
+
+        signal_notched = signal.filtfilt(b_notch, a_notch, samples)
+
+
+        return signal_notched # samples  # filtered_samples
 
     def fft_chart(self, show: bool = False):
         fft = np.fft.fft(self.samples)
@@ -275,7 +288,7 @@ class LiveDemodulator:
 
         config = Config()
         # ---- constants  ---- #
-        self.RATE = 48000  # 11025
+        self.RATE = 11025 #48000  # 11025
         self.CHUNK = self.RATE
         self.FORMAT = pyaudio.paInt16
         self.NUMPY_FORMAT = np.int16
@@ -375,8 +388,7 @@ class LiveDemodulator:
             img = Image.new('L', (w, h), )
             px, py = 0, 0
             for p in range(len(frame_points)):
-                # lum = 255 - frame_points[p]
-                lum = frame_points[p]
+                lum = 255 - frame_points[p]
                 img.putpixel((px, py), lum)
                 px += 1
                 if px >= w:
