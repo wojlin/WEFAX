@@ -79,7 +79,7 @@ class DataPacket:
         return signal_notched # samples  # filtered_samples
 
     def fft_chart(self, show: bool = False):
-        fft = np.fft.fft(self.samples)
+        fft = np.fft.fft(self.raw_samples)
 
         N = len(fft)
         n = np.arange(N)
