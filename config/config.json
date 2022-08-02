@@ -7,12 +7,15 @@
   },
   "recording_settings":
   {
+    "sample_rate": 11025,
     "audio_packet_duration": 1,
-    "minimum_frames_per_update": 10
+    "minimum_frames_per_update": 10,
+    "notch_filter_frequency": 2600,
+    "notch_filter_quality_factor": 1
   },
   "debug_settings":
   {
-    "save_audio_packets": true,
+    "save_audio_packets": false,
     "save_spectrum": false,
     "save_start_tone": false,
     "save_frames": false,

@@ -19,6 +19,8 @@ import os
 
 from config import Config
 
+config = Config()
+
 from colored_text import debug_log, Colors
 
 stop_threads = False
@@ -27,15 +29,15 @@ stop_threads = False
 class DataPacket:
     def __init__(self, sample_rate, samples, directory, duration, number):
 
-        self.__NOTCH_FILTER_FREQUENCY = 2600
-        self.__NOTCH_FILTER_QUALITY_FACTOR = 1
+        self.__NOTCH_FILTER_FREQUENCY = config.settings['recording_settings']['notch_filter_frequency']
+        self.__NOTCH_FILTER_QUALITY_FACTOR = config.settings['recording_settings']['notch_filter_quality_factor']
 
         self.duration = duration
         self.number = number
         self.directory = directory
         self.sample_rate = sample_rate
         self.raw_samples = samples
-        self.samples = self.__notch_filter(self.raw_samples)
+        self.samples = self.__process_samples()
         self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
         self.find_tone_chart_filepath = f'{self.directory}{self.number}_find_tone_chart.png'
         self.demodulated_chart_filepath = f'{self.directory}{self.number}_demodulated_chart.png'
@@ -43,40 +45,6 @@ class DataPacket:
         self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
         self.audio_chart_filepath = f'{self.directory}{self.number}_audio_chart.png'
         self.processed_chart_filepath = f'{self.directory}{self.number}_processed_chart.png'
-
-
-    def __notch_filter(self, samples):
-
-        """def butter_bandpass(lowcut, highcut, fs, order=5):
-            return scipy.signal.butter(order, [lowcut, highcut], fs=fs, btype='band', output='ba')
-
-        def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-            b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-            y = scipy.signal.lfilter(b, a, data)
-            return y
-
-        max_silence = 1000
-        cut_samples = []
-        for i in range(len(samples)):
-            if abs(samples[i]) > max_silence:
-                cut_samples.append(samples[i])
-
-        low_cut = 1000
-        high_cut = 4500
-
-        if self.sample_rate / 2 > 4500:
-            filtered_samples = butter_bandpass_filter(cut_samples, low_cut, high_cut, self.sample_rate, order=6)
-        else:
-            filtered_samples = samples"""
-
-        b_notch, a_notch = signal.iirnotch(self.__NOTCH_FILTER_FREQUENCY,
-                                           self.__NOTCH_FILTER_QUALITY_FACTOR,
-                                           self.sample_rate)
-
-        signal_notched = signal.filtfilt(b_notch, a_notch, samples)
-
-
-        return signal_notched # samples  # filtered_samples
 
     def fft_chart(self, show: bool = False):
         fft = np.fft.fft(self.raw_samples)
@@ -245,50 +213,72 @@ class DataPacket:
         else:
             return False
 
-    def process(self):
-        filtered_signal = self.__demodulate(self.samples)
+    def __process_samples(self):
+        """
+        this function applies filters, demodulates and returns a digitized signal with a value from 0 to 255
+        :return: ndarray of digitalized samples
+        """
+        notched_signal = self.__notch_filter(self.raw_samples)
+        filtered_signal = self.__demodulate(notched_signal)
         digitalized_signal = self.__digitalize(filtered_signal)
         return digitalized_signal
 
+    def __notch_filter(self, samples: np.ndarray) -> np.ndarray:
+        """
+        this function takes audio samples and applies a notch filter to them
+        to read more about notch filter please refer to: https://en.wikipedia.org/wiki/Band-stop_filter
+
+        :param samples: ndarray of audio samples
+        :return: ndarray of samples witch notch filter applied
+        """
+
+        b_notch, a_notch = signal.iirnotch(self.__NOTCH_FILTER_FREQUENCY,
+                                           self.__NOTCH_FILTER_QUALITY_FACTOR,
+                                           self.sample_rate)
+
+        return signal.filtfilt(b_notch, a_notch, samples)
+
     @staticmethod
-    def __demodulate(data):
-        hilbert_signal = np.abs(scipy.signal.hilbert(data))
+    def __demodulate(samples: np.ndarray) -> np.ndarray:
+        """
+        this function takes audio samples and uses the hilbert transform to ↵
+        ↳ convert frequency modulation to amplitude modulation
+        to read more about hilbert transform please refer to: https://en.wikipedia.org/wiki/Hilbert_transform
+
+        :param samples: ndarray of audio samples
+        :return: ndarray of am modulation samples
+        """
+
+        hilbert_signal = np.abs(scipy.signal.hilbert(samples))
         filtered_samples = scipy.signal.medfilt(hilbert_signal, 3)
-
-        """mean = sum(filtered_samples) / len(filtered_samples)
-        hilbert_cut = []
-        found = False
-        for i in range(len(filtered_samples)):
-            if not found:
-                if filtered_samples[i] > mean:
-                    hilbert_cut.append(filtered_samples[i])
-                    found = True
-            else:
-                hilbert_cut.append(filtered_samples[i])"""
-
         return filtered_samples
 
     @staticmethod
-    def __digitalize(data):
+    def __digitalize(am_samples: np.ndarray) -> np.ndarray:
+        """
+        this function converts amplitude modulated samples and digitizes them from 0 to 255
+        :param am_samples: ndarray of am modulation audio samples
+        :return: ndarray of digitalized samples
+        """
         plow = 0.5
         phigh = 99.5
-        (low, high) = np.percentile(data, (plow, phigh))
+        (low, high) = np.percentile(am_samples, (plow, phigh))
         delta = high - low
-        digitalized = np.round(255 * (data - low) / (delta + 0.000001))
+        digitalized = np.rint(255 * (am_samples - low) / (delta + 0.000001))
         digitalized[digitalized < 0] = 0
         digitalized[digitalized > 255] = 255
-        return [int(point) for point in digitalized]
+        return digitalized.astype(int)
 
     def __repr__(self):
-        return f'part: {self.number * self.duration}s-{self.number * self.duration + self.duration}s packet len: {len(self.samples)}  sample rate:{self.sample_rate}'
+        info = f'data packet {self.number} info: {self.number * self.duration}s-{self.number * self.duration + self.duration}s packet len: {len(self.samples)}  sample rate:{self.sample_rate}'
+        return debug_log(info, Colors.debug)
 
 
 class LiveDemodulator:
     def __init__(self, path: str):
 
-        config = Config()
         # ---- constants  ---- #
-        self.RATE = 11025 #48000  # 11025
+        self.RATE = config.settings['recording_settings']['sample_rate']
         self.CHUNK = self.RATE
         self.FORMAT = pyaudio.paInt16
         self.NUMPY_FORMAT = np.int16
@@ -320,7 +310,7 @@ class LiveDemodulator:
 
         # ---- variables ---- #
         self.data_packets = []
-        self.data_points = []
+        self.data_points = np.empty(1, dtype=int)
         self.threads = []
         self.audio_frames = []
         self.spectrum_websocket_stack = []
@@ -379,7 +369,7 @@ class LiveDemodulator:
 
     def convert_points_to_frames_thread(self):
         global stop_threads
-        if len(self.data_points) > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
+        if self.data_points.shape[0] > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
             debug_log("frame_convert", Colors.info)
             frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
 
@@ -388,7 +378,7 @@ class LiveDemodulator:
             img = Image.new('L', (w, h), )
             px, py = 0, 0
             for p in range(len(frame_points)):
-                lum = 255 - frame_points[p]
+                lum = 255 - int(frame_points[p])
                 img.putpixel((px, py), lum)
                 px += 1
                 if px >= w:
@@ -451,7 +441,8 @@ class LiveDemodulator:
             if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
                 self.start_tone_found = True
 
-        self.data_points += __packet.process()
+        self.data_points = np.append(self.data_points, __packet.samples)
+        #self.data_points.append(__packet.process())
 
         if self.__create_spectrogram_chart:
             __packet.spectrogram_chart()
