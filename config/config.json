@@ -9,17 +9,27 @@
   {
     "sample_rate": 11025,
     "audio_packet_duration": 1,
-    "minimum_frames_per_update": 10,
+    "minimum_frames_per_update": 10
+  },
+  "notch_filter_settings":
+  {
     "notch_filter_frequency": 2600,
     "notch_filter_quality_factor": 1
+  },
+  "start_tone_settings":
+  {
+    "peaks_minimum_distance": 250,
+    "peaks_minimum_height": 0.05,
+    "peaks_minimum_prominence": 0.2,
+    "peaks_minimum_frequency": 1000,
+    "peaks_maximum_frequency": 3000,
+    "peaks_minimum_amount": 4,
+    "peaks_maximum_amount": 6
   },
   "debug_settings":
   {
     "save_audio_packets": false,
     "save_spectrum": false,
-    "save_start_tone": false,
-    "save_frames": false,
-    "create_spectrogram_chart": false,
-    "create_demodulated_chart": false
+    "save_frames": false
   }
 }

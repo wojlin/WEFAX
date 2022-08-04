@@ -10,13 +10,14 @@ def debug_data_packet(sample_rate, samples, directory, duration, number):
     packet = DataPacket(sample_rate, samples, directory, duration, number)
     #packet.processed_chart(show=True)
     #packet.demodulated_chart(show=True)
-    packet.fft_chart(show=True)
+    #packet.fft_chart(show=True)
     #packet.audio_chart(show=True)
     #packet.spectrogram_chart(show=True)
+    packet.start_tone_chart(show=True)
 
 
 
 
 if __name__ == "__main__":
-    _sample_rate, _samples = wavfile.read('test_files/2.wav')
+    _sample_rate, _samples = wavfile.read(sys.argv[1])
     debug_data_packet(_sample_rate, _samples, 'static/temp/', int(_samples[0]/_sample_rate), 0)

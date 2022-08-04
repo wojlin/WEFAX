@@ -29,8 +29,16 @@ stop_threads = False
 class DataPacket:
     def __init__(self, sample_rate, samples, directory, duration, number):
 
-        self.__NOTCH_FILTER_FREQUENCY = config.settings['recording_settings']['notch_filter_frequency']
-        self.__NOTCH_FILTER_QUALITY_FACTOR = config.settings['recording_settings']['notch_filter_quality_factor']
+        self.__NOTCH_FILTER_FREQUENCY = config.settings['notch_filter_settings']['notch_filter_frequency']
+        self.__NOTCH_FILTER_QUALITY_FACTOR = config.settings['notch_filter_settings']['notch_filter_quality_factor']
+
+        self.__PEAKS_MINIMUM_DISTANCE = config.settings['start_tone_settings']['peaks_minimum_distance']
+        self.__PEAKS_MINIMUM_HEIGHT = config.settings['start_tone_settings']['peaks_minimum_height']
+        self.__PEAKS_MINIMUM_PROMINENCE = config.settings['start_tone_settings']['peaks_minimum_prominence']
+        self.__PEAKS_MINIMUM_FREQUENCY = config.settings['start_tone_settings']['peaks_minimum_frequency']
+        self.__PEAKS_MAXIMUM_FREQUENCY = config.settings['start_tone_settings']['peaks_maximum_frequency']
+        self.__PEAKS_MINIMUM_AMOUNT = config.settings['start_tone_settings']['peaks_minimum_amount']
+        self.__PEAKS_MAXIMUM_AMOUNT = config.settings['start_tone_settings']['peaks_maximum_amount']
 
         self.duration = duration
         self.number = number
@@ -39,7 +47,7 @@ class DataPacket:
         self.raw_samples = samples
         self.samples = self.__process_samples()
         self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
-        self.find_tone_chart_filepath = f'{self.directory}{self.number}_find_tone_chart.png'
+        self.start_tone_chart_filepath = f'{self.directory}{self.number}_start_tone_chart.png'
         self.demodulated_chart_filepath = f'{self.directory}{self.number}_demodulated_chart.png'
         self.spectrogram_chart_filepath = f'{self.directory}{self.number}_spectrogram_chart.png'
         self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
@@ -174,48 +182,70 @@ class DataPacket:
 
         return img
 
-    def find_start_tone(self, save: bool = True, show: bool = False):
+    def start_tone_chart(self, show: bool = False):
+        frequency, amplitude, peaks = self.__fourier_transform()
+        found = "found" if self.contain_start_tone() else "not found"
+        plt.title(f"start tone {found}")
+        plt.ylabel("amplitude")
+        plt.xlabel("frequency [Hz]")
+        plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%d Hz'))
 
-        fft = np.fft.fft(self.samples)
+        plt.xlim(xmin=0)
+        if frequency[-1] > 4000:
+            plt.xlim(xmax=4000)
+        plt.plot(frequency, amplitude)
+        plt.plot(frequency[peaks[0]], peaks[1]['peak_heights'], ".", color='r', markersize=10)
+        plt.savefig(self.start_tone_chart_filepath)
+        if show:
+            plt.show()
 
-        N = len(fft)
-        n = np.arange(N)
-        T = N / self.sample_rate
-        freq = n / T
+        plt.clf()
 
-        n_oneside = N // 2
+    def contain_start_tone(self) -> bool:
+        """
+        this function, using the fourier transform, checks if the audio packet has a start tone ↵
+        ↳ containing 5 peaks separated by a distance of 300Hz between each other
+        :return: True or False depending on whether the audio packet has a start tone or not
+        """
+
+        frequency, amplitude, peaks = self.__fourier_transform()
+        peaks_freqs = peaks[0]
+        in_frequency_range = lambda peak: self.__PEAKS_MINIMUM_FREQUENCY <= peak <= self.__PEAKS_MAXIMUM_FREQUENCY
+        peaks_correct_frequency_displace = all([in_frequency_range(peak) for peak in frequency[peaks_freqs]])
+        peaks_correct_amount = self.__PEAKS_MINIMUM_AMOUNT <= len(peaks_freqs) <= self.__PEAKS_MAXIMUM_AMOUNT
+
+        return True if peaks_correct_frequency_displace and peaks_correct_amount else False
+
+    def __fourier_transform(self):
+        """
+        this function creates a fourier transform based on audio samples ↵
+        ↳ and looks for frequency peaks based on input parameters
+
+        :return: x_axis of frequencies, y_axis of amplitude, found_peaks
+        """
+
+        fft = np.fft.fft(self.raw_samples)
+        fft_len = len(fft)
+        fft_arrange = np.arange(fft_len)
+        fft_time_len = fft_len / self.sample_rate
+        freq = fft_arrange / fft_time_len
+
+        n_oneside = fft_len // 2
         freqs_one_side = freq[:n_oneside]
         amplitude_one_size = abs(fft[:n_oneside] / n_oneside)
-
         normalized_amplitude = amplitude_one_size / (max(amplitude_one_size) + 0.0001)
-        peaks = scipy.signal.find_peaks(normalized_amplitude, distance=200, height=0.2)
 
-        if save or show:
-            plt.clf()
+        peaks = scipy.signal.find_peaks(normalized_amplitude,
+                                        distance=self.__PEAKS_MINIMUM_DISTANCE,
+                                        height=self.__PEAKS_MINIMUM_HEIGHT,
+                                        prominence=self.__PEAKS_MINIMUM_PROMINENCE)
 
-            plt.plot(freqs_one_side, normalized_amplitude)
-            plt.plot(freqs_one_side[peaks[0]], peaks[1]['peak_heights'], "x")
-            if save:
-                plt.savefig(self.find_tone_chart_filepath)
-            if show:
-                plt.show()
+        return freqs_one_side, normalized_amplitude, peaks
 
-            plt.clf()
-
-        found_peaks = peaks[0]
-
-        for peak in freqs_one_side[peaks[0]]:
-            if not 1000 < peak < 3000:
-                return False
-
-        if 4 <= len(found_peaks) <= 6:
-            return True
-        else:
-            return False
-
-    def __process_samples(self):
+    def __process_samples(self) -> np.ndarray:
         """
         this function applies filters, demodulates and returns a digitized signal with a value from 0 to 255
+
         :return: ndarray of digitalized samples
         """
         notched_signal = self.__notch_filter(self.raw_samples)
@@ -257,6 +287,7 @@ class DataPacket:
     def __digitalize(am_samples: np.ndarray) -> np.ndarray:
         """
         this function converts amplitude modulated samples and digitizes them from 0 to 255
+
         :param am_samples: ndarray of am modulation audio samples
         :return: ndarray of digitalized samples
         """
@@ -295,9 +326,6 @@ class LiveDemodulator:
         self.__save_audio_packets = config.settings['debug_settings']['save_audio_packets']
         self.__save_spectrum = config.settings['debug_settings']['save_spectrum']
         self.__save_frames = config.settings['debug_settings']['save_frames']
-        self.__save_start_tone = config.settings['debug_settings']['save_start_tone']
-        self.__create_spectrogram_chart = config.settings['debug_settings']['create_spectrogram_chart']
-        self.__create_demodulated_chart = config.settings['debug_settings']['create_demodulated_chart']
         # --------------------- #
 
         # ---- audio info ---- #
@@ -370,7 +398,7 @@ class LiveDemodulator:
     def convert_points_to_frames_thread(self):
         global stop_threads
         if self.data_points.shape[0] > self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:
-            debug_log("frame_convert", Colors.info)
+            debug_log("frame_convert", Colors.debug)
             frame_points = self.data_points[:self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE]
 
             frame_width = int(self.TIME_FOR_ONE_FRAME * self.RATE)
@@ -434,21 +462,15 @@ class LiveDemodulator:
         img = __packet.spectrogram_image(save=self.__save_spectrum)
 
         if not self.start_tone_found:
-            if __packet.find_start_tone(save=self.__save_start_tone):
+            if __packet.contain_start_tone():
                 self.amount_peaks_found += 1
             else:
                 self.amount_peaks_found = 0
             if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
                 self.start_tone_found = True
+                debug_log("start tone found", Colors.info)
 
         self.data_points = np.append(self.data_points, __packet.samples)
-        #self.data_points.append(__packet.process())
-
-        if self.__create_spectrogram_chart:
-            __packet.spectrogram_chart()
-
-        if self.__create_demodulated_chart:
-            __packet.demodulated_chart()
 
         buffered = BytesIO()
         img.save(buffered, format="PNG")
