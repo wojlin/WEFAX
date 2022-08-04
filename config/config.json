@@ -26,6 +26,14 @@
     "peaks_minimum_amount": 4,
     "peaks_maximum_amount": 6
   },
+  "sync_pulse_settings":
+  {
+    "peaks_minimum_distance": 750,
+    "peaks_minimum_height": 0.5,
+    "peaks_minimum_prominence": 0.2,
+    "peaks_minimum_frequency": 1400,
+    "peaks_maximum_frequency": 1600
+  },
   "debug_settings":
   {
     "save_audio_packets": false,

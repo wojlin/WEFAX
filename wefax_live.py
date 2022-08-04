@@ -16,6 +16,7 @@ import wave
 import time
 import sys
 import os
+import math
 
 from config import Config
 
@@ -27,27 +28,47 @@ stop_threads = False
 
 
 class DataPacket:
-    def __init__(self, sample_rate, samples, directory, duration, number):
+    def __init__(self, sample_rate, samples, lines_per_minute, directory, duration, number):
 
+        # notch filter constants
         self.__NOTCH_FILTER_FREQUENCY = config.settings['notch_filter_settings']['notch_filter_frequency']
         self.__NOTCH_FILTER_QUALITY_FACTOR = config.settings['notch_filter_settings']['notch_filter_quality_factor']
 
-        self.__PEAKS_MINIMUM_DISTANCE = config.settings['start_tone_settings']['peaks_minimum_distance']
-        self.__PEAKS_MINIMUM_HEIGHT = config.settings['start_tone_settings']['peaks_minimum_height']
-        self.__PEAKS_MINIMUM_PROMINENCE = config.settings['start_tone_settings']['peaks_minimum_prominence']
-        self.__PEAKS_MINIMUM_FREQUENCY = config.settings['start_tone_settings']['peaks_minimum_frequency']
-        self.__PEAKS_MAXIMUM_FREQUENCY = config.settings['start_tone_settings']['peaks_maximum_frequency']
-        self.__PEAKS_MINIMUM_AMOUNT = config.settings['start_tone_settings']['peaks_minimum_amount']
-        self.__PEAKS_MAXIMUM_AMOUNT = config.settings['start_tone_settings']['peaks_maximum_amount']
+        # start tone constants
+        __start_tone_settings = config.settings['start_tone_settings']
+        self.__START_TONE_PEAKS_MINIMUM_DISTANCE = __start_tone_settings['peaks_minimum_distance']
+        self.__START_TONE_PEAKS_MINIMUM_HEIGHT = __start_tone_settings['peaks_minimum_height']
+        self.__START_TONE_PEAKS_MINIMUM_PROMINENCE = __start_tone_settings['peaks_minimum_prominence']
+        self.__START_TONE_PEAKS_MINIMUM_FREQUENCY = __start_tone_settings['peaks_minimum_frequency']
+        self.__START_TONE_PEAKS_MAXIMUM_FREQUENCY = __start_tone_settings['peaks_maximum_frequency']
+        self.__START_TONE_PEAKS_MINIMUM_AMOUNT = __start_tone_settings['peaks_minimum_amount']
+        self.__START_TONE_PEAKS_MAXIMUM_AMOUNT = __start_tone_settings['peaks_maximum_amount']
 
+        # sync pulse constants
+        __sync_pulse_settings = config.settings['sync_pulse_settings']
+        self.__SYNC_PULSE_PEAKS_MINIMUM_HEIGHT = __sync_pulse_settings['peaks_minimum_height']
+        self.__SYNC_PULSE_PEAKS_MINIMUM_PROMINENCE = __sync_pulse_settings['peaks_minimum_prominence']
+        self.__SYNC_PULSE_PEAKS_MINIMUM_FREQUENCY = __sync_pulse_settings['peaks_minimum_frequency']
+        self.__SYNC_PULSE_PEAKS_MAXIMUM_FREQUENCY = __sync_pulse_settings['peaks_maximum_frequency']
+        self.__SYNC_PULSE_PEAKS_MINIMUM_AMOUNT = math.floor(1 / (lines_per_minute / 60) / duration)
+        self.__SYNC_PULSE_PEAKS_MAXIMUM_AMOUNT = math.ceil(1 / (lines_per_minute / 60) / duration)
+
+        # audio packet info
+        self.lines_per_minute = lines_per_minute
         self.duration = duration
         self.number = number
         self.directory = directory
         self.sample_rate = sample_rate
+
+        # audio data
         self.raw_samples = samples
         self.samples = self.__process_samples()
-        self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
+
+        # files paths
         self.start_tone_chart_filepath = f'{self.directory}{self.number}_start_tone_chart.png'
+        self.sync_pulse_chart_filepath = f'{self.directory}{self.number}_sync_pulse_chart.png'
+
+        self.fft_chart_filepath = f'{self.directory}{self.number}_fft_chart.png'
         self.demodulated_chart_filepath = f'{self.directory}{self.number}_demodulated_chart.png'
         self.spectrogram_chart_filepath = f'{self.directory}{self.number}_spectrogram_chart.png'
         self.spectrogram_image_filepath = f'{self.directory}{self.number}_spectrogram_image.png'
@@ -183,7 +204,21 @@ class DataPacket:
         return img
 
     def start_tone_chart(self, show: bool = False):
-        frequency, amplitude, peaks = self.__fourier_transform()
+        """
+        !!! DEBUG FUNCTION !!!
+
+        this function will plot a chart that contains fast fourier transform of audio with start tone peaks found in it
+        :param show: chart will pop up on the screen
+        :return: nothing
+        """
+        frequency, amplitude = self.__fourier_transform()
+
+        distance = self.__START_TONE_PEAKS_MINIMUM_DISTANCE
+        height = self.__START_TONE_PEAKS_MINIMUM_HEIGHT
+        prominence = self.__START_TONE_PEAKS_MINIMUM_PROMINENCE
+
+        peaks = scipy.signal.find_peaks(amplitude, distance=distance, height=height, prominence=prominence)
+
         found = "found" if self.contain_start_tone() else "not found"
         plt.title(f"start tone {found}")
         plt.ylabel("amplitude")
@@ -198,8 +233,108 @@ class DataPacket:
         plt.savefig(self.start_tone_chart_filepath)
         if show:
             plt.show()
-
         plt.clf()
+
+    def sync_pulse_chart(self, show: bool = False):
+        """
+        !!! DEBUG FUNCTION !!!
+
+        this function will plot a chart that show if sync pulse was found in audio packet
+        :param show: chart will pop up on the screen
+        :return: nothing
+        """
+        frequency, amplitude = self.__fourier_transform()
+
+        sync_pulse_info = self.find_sync_pulse()
+
+        found = "found" if sync_pulse_info['pulse_found'] is True else "not found"
+
+        found_f_peak = "found" if sync_pulse_info['frequency_peak_found'] is True else "not found"
+        found_s_peak = "found" if sync_pulse_info['samples_peak_found'] is True else "not found"
+
+        fig, axs = plt.subplots(2, 1)
+
+        fig.suptitle(f"sync pulse {found}", fontsize=16)
+        axs[0].set_title(f'fourier transform peak {found_f_peak}', fontsize=10)
+        axs[0].plot(frequency, amplitude)
+        axs[0].xaxis.set_major_formatter(FormatStrFormatter('%d Hz'))
+        axs[0].set_xlabel('frequency [HZ]')
+        axs[0].set_ylabel('amplitude')
+        axs[0].grid(True)
+        axs[0].set_xlim(left=0)
+        axs[0].set_ylim(bottom=0)
+        axs[0].set_xlim(right=len(frequency))
+        axs[0].plot(sync_pulse_info['peaks_fft'][0], sync_pulse_info['peaks_fft'][1], ".", color='r', markersize=10)
+
+        if frequency[-1] > 3000:
+            axs[0].set_xlim(left= 1000, right=3000)
+
+        axs[1].set_title(f'samples peak {found_s_peak}', fontsize=10)
+
+        ticks_range = np.arange(0, len(self.samples) + 1, len(self.samples) / 10)
+        labels_range = [f"{round(float(x/self.sample_rate),2)}s" for x in ticks_range]
+
+        axs[1].set_xticks(ticks_range)
+        axs[1].set_xticklabels(labels_range)
+
+        axs[1].plot(self.samples)
+
+        axs[1].set_xlabel('time')
+        axs[1].set_ylabel('value')
+        axs[1].set_xlim(left=0, right=len(self.samples))
+        axs[1].set_ylim(bottom=0)
+        for peak in sync_pulse_info['peaks_samples']:
+            axs[1].axvline(peak, color='r')
+
+        plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.8, wspace=0.1, hspace=1)
+        plt.savefig(self.sync_pulse_chart_filepath)
+        if show:
+            plt.show()
+        plt.clf()
+
+    def find_sync_pulse(self) -> dict:
+        frequency, amplitude = self.__fourier_transform()
+
+        height = self.__SYNC_PULSE_PEAKS_MINIMUM_HEIGHT
+        prominence = self.__SYNC_PULSE_PEAKS_MINIMUM_PROMINENCE
+
+        peaks = scipy.signal.find_peaks(amplitude, height=height, prominence=prominence)
+        peaks_freqs = peaks[0]
+        in_frequency_range = lambda \
+            peak: self.__SYNC_PULSE_PEAKS_MINIMUM_FREQUENCY <= peak <= self.__SYNC_PULSE_PEAKS_MAXIMUM_FREQUENCY
+        peaks_correct_frequency_displace = all([in_frequency_range(peak) for peak in frequency[peaks_freqs]])
+
+        def pattern_search():
+
+            samples = lambda x: int((x / (len(self.samples) / self.sample_rate)) * len(self.samples))
+            sync = [255] + [0] * samples(0.025) + [255]
+            mindistance = samples(0.4)
+            peaks = [(-mindistance, 0)]
+
+            # minimum distance between peaks
+
+
+            # need to shift the values down to get meaningful correlation values
+            signalshifted = [x - 128 for x in self.samples]
+            sync = [x - 128 for x in sync]
+            for i in range(len(self.samples) - len(sync)):
+
+                corr = np.dot(sync, signalshifted[i: i + len(sync)])
+
+                if i - peaks[-1][0] > mindistance:
+                    peaks.append((i, corr))
+                elif corr > peaks[-1][1]:
+                    peaks[-1] = (i, corr)
+            return [peak[0] for peak in peaks][1:]
+
+        pulses = pattern_search()
+        out_info = {}
+        out_info["frequency_peak_found"] = True if peaks_correct_frequency_displace and len(peaks_freqs) == 1 else False
+        out_info["samples_peak_found"] = True if len(pulses) else False
+        out_info["pulse_found"] = True if out_info["frequency_peak_found"] is True and out_info["samples_peak_found"] is True else False
+        out_info['peaks_fft'] = [frequency[peaks[0]], peaks[1]['peak_heights']]
+        out_info['peaks_samples'] = pulses
+        return out_info
 
     def contain_start_tone(self) -> bool:
         """
@@ -208,11 +343,18 @@ class DataPacket:
         :return: True or False depending on whether the audio packet has a start tone or not
         """
 
-        frequency, amplitude, peaks = self.__fourier_transform()
+        frequency, amplitude = self.__fourier_transform()
+
+        distance = self.__START_TONE_PEAKS_MINIMUM_DISTANCE
+        height = self.__START_TONE_PEAKS_MINIMUM_HEIGHT
+        prominence = self.__START_TONE_PEAKS_MINIMUM_PROMINENCE
+
+        peaks = scipy.signal.find_peaks(amplitude, distance=distance, height=height, prominence=prominence)
+
         peaks_freqs = peaks[0]
-        in_frequency_range = lambda peak: self.__PEAKS_MINIMUM_FREQUENCY <= peak <= self.__PEAKS_MAXIMUM_FREQUENCY
+        in_frequency_range = lambda peak: self.__START_TONE_PEAKS_MINIMUM_FREQUENCY <= peak <= self.__START_TONE_PEAKS_MAXIMUM_FREQUENCY
         peaks_correct_frequency_displace = all([in_frequency_range(peak) for peak in frequency[peaks_freqs]])
-        peaks_correct_amount = self.__PEAKS_MINIMUM_AMOUNT <= len(peaks_freqs) <= self.__PEAKS_MAXIMUM_AMOUNT
+        peaks_correct_amount = self.__START_TONE_PEAKS_MINIMUM_AMOUNT <= len(peaks_freqs) <= self.__START_TONE_PEAKS_MAXIMUM_AMOUNT
 
         return True if peaks_correct_frequency_displace and peaks_correct_amount else False
 
@@ -235,12 +377,7 @@ class DataPacket:
         amplitude_one_size = abs(fft[:n_oneside] / n_oneside)
         normalized_amplitude = amplitude_one_size / (max(amplitude_one_size) + 0.0001)
 
-        peaks = scipy.signal.find_peaks(normalized_amplitude,
-                                        distance=self.__PEAKS_MINIMUM_DISTANCE,
-                                        height=self.__PEAKS_MINIMUM_HEIGHT,
-                                        prominence=self.__PEAKS_MINIMUM_PROMINENCE)
-
-        return freqs_one_side, normalized_amplitude, peaks
+        return freqs_one_side, normalized_amplitude
 
     def __process_samples(self) -> np.ndarray:
         """
@@ -453,6 +590,7 @@ class LiveDemodulator:
 
         __packet = DataPacket(self.RATE,
                               __samples,
+                              self.LINES_PER_MINUTE,
                               self.OUTPUT_DIRECTORY,
                               self.AUDIO_PACKET_DURATION,
                               self.saved_chunks)
@@ -469,6 +607,13 @@ class LiveDemodulator:
             if self.amount_peaks_found * self.AUDIO_PACKET_DURATION >= 4:
                 self.start_tone_found = True
                 debug_log("start tone found", Colors.info)
+
+        if self.start_tone_found and not self.phasing_signal_found:
+            pulse_info = __packet.find_sync_pulse()
+            if pulse_info["pulse_found"] is True:
+                self.phasing_signal_found = True
+                self.data_points = __packet.samples[pulse_info["peaks_samples"][-1]:]
+                debug_log("sync pulse found", Colors.info)
 
         self.data_points = np.append(self.data_points, __packet.samples)
 
