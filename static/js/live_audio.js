@@ -317,6 +317,28 @@ function clear_image()
 }
 
 
+
+function get_image()
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+
+            var text = xmlHttp.responseText;
+            console.log(text);
+
+            document.getElementById("image_frames").innerHTML = '<img src="'+text+'" alt="output image" />';
+
+        }
+    }
+
+    xmlHttp.open("GET", '/get_image', true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+
 function audio_info_interval(){
     manage_audio_info();
 

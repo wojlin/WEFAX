@@ -4,6 +4,7 @@ from distutils.dir_util import copy_tree
 from flask_socketio import SocketIO
 from flask_socketio import emit
 from zipfile import ZipFile
+from ctypes import *
 import threading
 import datetime
 import zipfile
@@ -16,6 +17,8 @@ import time
 import ast
 import sys
 import os
+import geventwebsocket
+import eventlet
 
 from colored_text import debug_log, Colors
 from wefax_live import LiveDemodulator
@@ -26,6 +29,15 @@ from config import Config
 def stop(signum, frame):
     print('exit')
     sys.exit(0)
+
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+def py_error_handler(filename, line, function, err, fmt):
+  pass
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+asound = cdll.LoadLibrary('libasound.so')
+asound.snd_lib_error_set_handler(c_error_handler)
 
 
 logging.getLogger('werkzeug').disabled = True
