@@ -13,7 +13,7 @@
     -webkit-backdrop-filter: blur(2.4px);
     border: 1px solid rgba(54, 54, 54, 0.41);
 
-    width: 120vh;
+    width: 130vh;
     height: 70vh;
     font-family: Arial;
 
@@ -28,7 +28,7 @@
 .audio_grid {
   display: grid;
   grid-auto-rows: 1fr;
-  grid-template-columns: 0.7fr 2fr 0.7fr;
+  grid-template-columns: 0.9fr 2fr 0.7fr;
   grid-template-rows: 0.4fr 1.6fr 1fr;
   gap: 0px 0px;
   grid-template-areas:

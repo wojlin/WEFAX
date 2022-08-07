@@ -251,6 +251,9 @@ function manage_audio_info()
             if(text["image_process"] == "not started")
             {
                 info_table_image.innerHTML = "<span style='color:red'>"+text["image_process"]+"</span>";
+            }else if(text["image_process"] == "image converted")
+            {
+                info_table_image.innerHTML = "<span style='color:green'>"+text["image_process"]+"</span>";
             }else
             {
                 info_table_image.innerHTML = "<span style='color:white'>"+text["image_process"]+"</span>";
@@ -263,15 +266,6 @@ function manage_audio_info()
             {
                 info_table_stop_tone.innerHTML = "<span style='color:green'>found</span>";
             }
-
-            if(text["black_found"] == false)
-            {
-                info_table_black.innerHTML = "<span style='color:red'>not found</span>";
-            }else
-            {
-                info_table_black.innerHTML = "<span style='color:green'>found</span>";
-            }
-
 
         }
     }

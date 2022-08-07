@@ -16,13 +16,15 @@
     "notch_filter_frequency": 2600,
     "notch_filter_quality_factor": 1
   },
-  "start_tone_settings":
+  "tones_settings":
   {
+    "start_tone_peaks_minimum_distance": 250,
+    "stop_tone_peaks_minimum_distance": 380,
     "peaks_minimum_distance": 250,
     "peaks_minimum_height": 0.05,
     "peaks_minimum_prominence": 0.2,
-    "peaks_minimum_frequency": 1000,
-    "peaks_maximum_frequency": 3000,
+    "peaks_minimum_frequency": 800,
+    "peaks_maximum_frequency": 3200,
     "peaks_minimum_amount": 4,
     "peaks_maximum_amount": 6
   },

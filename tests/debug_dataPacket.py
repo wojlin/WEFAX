@@ -14,7 +14,8 @@ def debug_data_packet(sample_rate, samples, lines_per_minute, directory, duratio
     #packet.audio_chart(show=True)
     #packet.spectrogram_chart(show=True)
     #packet.start_tone_chart(show=True)
-    packet.sync_pulse_chart(show=True)
+    packet.stop_tone_chart(show=True)
+    #packet.sync_pulse_chart(show=True)
 
 
 
