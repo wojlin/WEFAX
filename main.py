@@ -163,6 +163,12 @@ def get_audio_devices():
     return {i: p.get_device_info_by_index(i) for i in range(p.get_device_count())}
 
 
+@app.route('/clear_image')
+def clear_image():
+    global live_demodulator
+    return live_demodulator.clear_image()
+
+
 @app.route('/audio_device_start_recording')
 def audio_device_start_recording():
     global live_demodulator

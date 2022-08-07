@@ -125,20 +125,30 @@
 
             <div id="audio_setup_inline_right">
 
-                <div class="memory">
-                    <table class="table_memory">
-                        <tr class="space">
-                            <th>ram usage</th>
-                            <td>:</td>
-                            <td id="ram_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
-                        </tr>
-                        <tr class="space">
-                            <th>disk space</th>
-                            <td>:</td>
-                            <td id="disk_space_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
-                        </tr>
-                    </table>
-                </div>
+                    <button onclick="clear_image();" class="button">
+                        <div class="trash">
+                            <div class="top">
+                                <div class="paper"></div>
+                            </div>
+                            <div class="box"></div>
+                            <div class="check">
+                                <svg viewBox="0 0 8 6">
+                                    <polyline points="1 3.4 2.71428571 5 7 1"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <span>clear image</span>
+                    </button>
+                    <script>
+                        document.querySelectorAll('.button').forEach(button => button.addEventListener('click', e => {
+                            if(!button.classList.contains('delete')) {
+                                button.classList.add('delete');
+                                setTimeout(() => button.classList.remove('delete'), 2200);
+                            }
+                            e.preventDefault();
+                        }));
+
+                    </script>
 
             </div>
 
@@ -155,6 +165,20 @@
         </div>
 
         <div class="audio_info border">
+            <p class="audio_info_text">memory:</p>
+            <table class="table">
+                <tr class="space">
+                    <th>ram usage</th>
+                    <td>:</td>
+                    <td id="ram_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
+                </tr>
+                <tr class="space">
+                    <th>disk space</th>
+                    <td>:</td>
+                    <td id="disk_space_usage"><span style="color:rgba(255,255,255,0.8);">- MB</span></td>
+                </tr>
+            </table>
+            <hr>
             <p class="audio_info_text">audio info:</p>
             <table class="table">
                 <tr class="space">

@@ -297,6 +297,26 @@ function manage_memory_info()
 }
 
 
+function clear_image()
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function()
+    {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        {
+            document.getElementById("image_frames").innerHTML = '';
+
+            var text = xmlHttp.responseText;
+            console.log(text);
+
+        }
+    }
+
+    xmlHttp.open("GET", '/clear_image', true); // true for asynchronous
+    xmlHttp.send(null);
+}
+
+
 function audio_info_interval(){
     manage_audio_info();
 

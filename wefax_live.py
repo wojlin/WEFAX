@@ -526,6 +526,7 @@ class LiveDemodulator:
         self.data_points = np.empty(1, dtype=int)
         self.threads = []
         self.audio_frames = []
+        self.image_frames = []
         self.spectrum_websocket_stack = []
         self.frames_websocket_stack = []
         self.connected = False
@@ -617,6 +618,7 @@ class LiveDemodulator:
                 img.save(frame_output_path)
 
             self.saved_frames += 1
+            self.image_frames.append(img)
 
             self.data_points = self.data_points[self.SAMPLES_FOR_ONE_FRAME * self.MINIMUM_FRAMES_PER_UPDATE:]
 
@@ -766,12 +768,17 @@ class LiveDemodulator:
 
         return outfile
 
+    def clear_image(self):
+        self.image_frames = []
+        debug_log("image cleared", Colors.info)
+        return "image cleared"
+
     def end_stream(self):
         global stop_threads
         stop_threads = True
         for thread in self.threads:
             thread.join()
-        if self.connected:
+        if self.connected and self.stream is not None:
             self.stream.stop_stream()
             self.stream.close()
         self.p.terminate()
