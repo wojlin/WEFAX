@@ -112,6 +112,7 @@ function manage_record_button()
                     document.getElementById("custom-select").style.opacity = 1;
                     document.getElementById("custom-select").style.pointerEvents = "all";
                     get_combined_audio_file();
+                    get_image();
 
                 }
             }
@@ -329,12 +330,19 @@ function get_image()
             var text = xmlHttp.responseText;
             console.log(text);
 
-            document.getElementById("image_frames").innerHTML = '<img src="'+text+'" alt="output image" />';
+            var frames_container = document.getElementById("image_frames");
+            var frames_container_width = frames_container.clientWidth;
 
+            document.getElementById("image_frames").innerHTML = '';
+            var image = document.createElement('img');
+            image.style.display = 'block';
+            image.src = text;
+            image.style.width = frames_container_width + 'px';
+            frames_container.appendChild(image);
         }
     }
 
-    xmlHttp.open("GET", '/get_image', true); // true for asynchronous
+    xmlHttp.open("GET", '/create_image', true); // true for asynchronous
     xmlHttp.send(null);
 }
 

@@ -1,6 +1,5 @@
 from flask import Flask, send_from_directory, render_template, request
 from werkzeug.utils import secure_filename
-from distutils.dir_util import copy_tree
 from flask_socketio import SocketIO
 from flask_socketio import emit
 from zipfile import ZipFile
@@ -17,14 +16,16 @@ import time
 import ast
 import sys
 import os
-import geventwebsocket
-import eventlet
+#import geventwebsocket
+#import eventlet
 
 from colored_text import debug_log, Colors
 from wefax_live import LiveDemodulator
 from wefax import Demodulator
 from config import Config
 
+cli = sys.modules['flask.cli']
+cli.show_server_banner = lambda *x: None
 
 def stop(signum, frame):
     print('exit')
@@ -130,7 +131,9 @@ def save_to_gallery():
     datestamp = r['datestamp']
     folder_path = f'static/temp/{datestamp}/'
     out_path = f'static/gallery/{datestamp}/'
-    copy_tree(folder_path, out_path)
+
+    shutil.copy2(folder_path, out_path)
+
     file_info = demodulators[datestamp].file_info()
     file_info['filename'] = str(file_info['filename']).split('.')[0]
     audio_filename = str(file_info['filename']) + '.wav'
@@ -179,6 +182,12 @@ def get_audio_devices():
 def clear_image():
     global live_demodulator
     return live_demodulator.clear_image()
+
+
+@app.route('/create_image')
+def create_image():
+    global live_demodulator
+    return live_demodulator.create_image()
 
 
 @app.route('/audio_device_start_recording')
@@ -324,6 +333,7 @@ if __name__ == "__main__":
     port = config.settings['host_settings']['port']
     debug = config.settings['host_settings']['debug']
     url = f"http://{host}:{port}"
-    print(f"\u001b]8;;{url}\u001b\\{url}\u001b]8;;\u001b\\")
+    message = f"server is running on: \u001b]8;;{url}\u001b\\{url}\u001b]8;;\u001b\\"
+    debug_log(message, Colors.info)
 
     socketio.run(app, host=host, port=port, debug=debug)
