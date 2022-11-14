@@ -1,0 +1,9 @@
+flask
+flask_socketio
+numpy
+scipy
+matplotlib
+Pillow
+pyaudio
+wave
+psutil
