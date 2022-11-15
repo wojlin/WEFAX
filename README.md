@@ -105,15 +105,9 @@ WEFAX has 60, 90, 100, 120, 180 and 240 LPM (Lines per minute) speeds, and two I
 ```
 git clone https://github.com/wojlin/WEFAX.git
 cd WEFAX
-pip install flask
-pip install flask_socketio
-pip install numpy
-pip install scipy
-pip install matplotlib
-pip install Pillow
-pip install pyaudio
-pip install wave
-pip install psutlis
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### usage:
