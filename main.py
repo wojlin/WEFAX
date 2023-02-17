@@ -28,7 +28,8 @@ cli = sys.modules['flask.cli']
 cli.show_server_banner = lambda *x: None
 
 def stop(signum, frame):
-    print('exit')
+    print()
+    debug_log('exit', Colors.error)
     sys.exit(0)
 
 
@@ -54,7 +55,7 @@ config = Config()
 
 
 def delete_directory(path: str, datestamp: str):
-    print(f"{path} deleted")
+    debug_log(f"{path} deleted", Colors.info)
     del demodulators[datestamp]
     shutil.rmtree(path)
 
@@ -163,7 +164,6 @@ def get_gallery_files():
             ret_json = ast.literal_eval(f.read())
         gallery_files[directory] = ret_json
     gallery_files = str(dict(sorted(gallery_files.items(), key=lambda x: x[0].lower(), reverse=True))).replace("'", '"')
-    print(gallery_files)
     return gallery_files
 
 

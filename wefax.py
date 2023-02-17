@@ -11,6 +11,9 @@ import matplotlib.animation as animation
 import sys
 import os
 
+from config import Config
+
+config = Config()
 
 class Demodulator:
     def __init__(self, filepath: str,
@@ -51,10 +54,22 @@ class Demodulator:
 
         self.audio_data, self.sample_rate, self.length = self.__read_file()
 
+
+
         time.sleep(1)
         if self.sample_rate != 11025:
             self.audio_data, self.sample_rate, self.length = self.__resample(self.audio_data, self.sample_rate,
                                                                              self.length)
+        self.__NOTCH_FILTER_FREQUENCY = int(config.settings['notch_filter_settings']['notch_filter_frequency'])
+        self.__NOTCH_FILTER_QUALITY_FACTOR = config.settings['notch_filter_settings']['notch_filter_quality_factor']
+
+        print(self.__NOTCH_FILTER_FREQUENCY, self.__NOTCH_FILTER_QUALITY_FACTOR, self.sample_rate)
+
+        b_notch, a_notch = scipy.signal.iirnotch(w0=self.__NOTCH_FILTER_FREQUENCY,
+                                                 Q=self.__NOTCH_FILTER_QUALITY_FACTOR,
+                                                 fs=self.sample_rate)
+
+        self.audio_data = scipy.signal.filtfilt(b_notch, a_notch, self.audio_data)
         time.sleep(1)
         self.demodulated_data = self.__demodulate(self.audio_data)
         time.sleep(1)
@@ -394,13 +409,16 @@ class Demodulator:
 
 
 if __name__ == "__main__":
-    demodulator = Demodulator('test_files/tokyo_noise.wav',
-                              lines_per_minute=90,
+    filename = str(sys.argv[1])
+    lpm = int(sys.argv[2])
+    output = str(sys.argv[3])
+    demodulator = Demodulator(filename,
+                              lines_per_minute=lpm,
                               tcp_stream=False, quiet=False)
     for key, value in demodulator.file_info().items():
         print(key, ":", value)
     demodulator.process()
     #demodulator.animated_spectrum()
     # demodulator.show_output_image()
-    demodulator.signal_chart(20, 35.5)
-    demodulator.save_output_image("input.png")
+    #demodulator.signal_chart(0, 60.5)
+    demodulator.save_output_image(output)

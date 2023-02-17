@@ -105,10 +105,10 @@ WEFAX has 60, 90, 100, 120, 180 and 240 LPM (Lines per minute) speeds, and two I
 ```
 git clone https://github.com/wojlin/WEFAX.git
 cd WEFAX
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 ```
+<span style="color:rgb(255,55,55)">**WARNING**: do **NOT** use virtual environment! For some reason pyaudio won't install on venv. Use only global interpreter</span>
+
 
 ### usage:
 ```

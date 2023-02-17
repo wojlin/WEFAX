@@ -2,3 +2,13 @@
 /__pycache__/
 /static/temp/
 .DS_Store
+.venv/*
+report.html
+./report.html
+venv
+venv/*
+__pycache__/*
+__pycache__
+static/gallery/*
+test_files/other
+
